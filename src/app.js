@@ -41,12 +41,6 @@ app.use(
 app.use(passport.initialize())
 app.use(passport.session())
 
-// Routes
-const paymentRoutes = require("../routes/payment")
-const uploadRoute = require("../routes/upload")
-const queryRoute = require("../routes/query")
-const userRoutes = require("../routes/userRoute")
-const chatRoutes = require("../routes/chatRoute")
 
 // Home auth
 
@@ -65,12 +59,31 @@ app.get("/", (req, res) => {
     res.status(500).json({ status: "error" })
   }
 })
+
+
+
+
 // Mount routes
 app.use("/payment", paymentRoutes)
 app.use("/upload", uploadRoute)
 app.use("/query", queryRoute)
 app.use("/user", userRoutes)
 app.use("/chat", chatRoutes)
+
+
+
+// Routes
+const paymentRoutes = require("../routes/payment")
+const uploadRoute = require("../routes/upload")
+const queryRoute = require("../routes/query")
+const userRoutes = require("../routes/userRoute")
+const chatRoutes = require("../routes/chatRoute")
+
+
+
+
+
+
 
 // start the DB connection before starting the app
 connectDB()

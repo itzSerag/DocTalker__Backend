@@ -44,6 +44,7 @@ const userSchema = new mongoose.Schema({
         type : Boolean,
         default : false 
     },
+
     
     // array of chat ids that the user is in
 
