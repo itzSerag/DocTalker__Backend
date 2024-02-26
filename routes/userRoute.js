@@ -13,8 +13,11 @@ function isLoggedIn(req, res, next) {
   require.user ? next() : res.sendStatus(401)
 }
 
+// Routes that don't require authentication
 router.post("/login", login)
 router.post("/signup", signup)
+
+
 // Routes that require authentication
 router.delete("/", auth, deleteUser)
 router.put("/", auth, updateUser)

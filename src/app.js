@@ -11,6 +11,11 @@ require("dotenv").config()
 require("../config/passport")
 
 
+// set the view engine to ejs
+app.set("view engine", "ejs")
+
+// set the public folder
+app.use(express.static("public"))
 
 
 const PORT = process.env.PORT || 3000
@@ -43,22 +48,24 @@ app.use(passport.session())
 
 
 // Home auth
-
 app.get("/", (req, res) => {
   try {
-    res.send('success')
+    res.render("index")
   } catch (err) {
     res.status(500).json({ status: "error" })
   }
 })
 
-app.get("/", (req, res) => {
-  try {
-    res.status(200).json({ status: "success" })
-  } catch (err) {
-    res.status(500).json({ status: "error" })
-  }
-})
+
+
+
+
+// Routes
+const paymentRoutes = require("../routes/payment")
+const uploadRoute = require("../routes/upload")
+const queryRoute = require("../routes/query")
+const userRoutes = require("../routes/userRoute")
+const chatRoutes = require("../routes/chatRoute")
 
 
 
@@ -69,15 +76,6 @@ app.use("/upload", uploadRoute)
 app.use("/query", queryRoute)
 app.use("/user", userRoutes)
 app.use("/chat", chatRoutes)
-
-
-
-// Routes
-const paymentRoutes = require("../routes/payment")
-const uploadRoute = require("../routes/upload")
-const queryRoute = require("../routes/query")
-const userRoutes = require("../routes/userRoute")
-const chatRoutes = require("../routes/chatRoute")
 
 
 
