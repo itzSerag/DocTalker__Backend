@@ -14,8 +14,10 @@
     "@pinecone-database/pinecone": "^1.1.2",
     "aws": "^0.0.3-2",
     "aws-sdk": "^2.1505.0",
+    "axios": "^1.6.7",
     "bcrypt": "^5.1.1",
     "body-parser": "^1.20.2",
+    "cheerio": "^1.0.0-rc.12",
     "cors": "^2.8.5",
     "dotenv": "^16.3.1",
     "ejs": "^3.1.9",
@@ -26,6 +28,7 @@
     "langchain": "^0.0.199",
     "mammoth": "^1.6.0",
     "mathjs": "^12.1.0",
+    "minify": "^11.0.1",
     "mongodb": "^5.9.1",
     "mongoose": "^7.6.3",
     "morgan": "^1.10.0",
@@ -41,6 +44,7 @@
     "socket.io": "^4.7.4",
     "string-minify": "^1.0.1",
     "stripe": "^14.2.0",
-    "validator": "^13.11.0"
+    "validator": "^13.11.0",
+    "youtube-transcript": "^1.0.6"
   }
 }

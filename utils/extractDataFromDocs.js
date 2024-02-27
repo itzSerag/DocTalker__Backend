@@ -5,6 +5,8 @@ const minify = require("string-minify");
 
 
 exports.convertDocToChunks = async (files) => {
+
+
   const splitter = new RecursiveCharacterTextSplitter({
     chunkSize: 512,
     chunkOverlap: 50,
@@ -15,10 +17,10 @@ exports.convertDocToChunks = async (files) => {
   for (const file of files) {
     const { FileName, FileUrl } = file;
     let documentContent;
-
+    
     if (!FileUrl) {
       console.log(`File URL not provided for ${FileName}`);
-      continue; // Skip this file if URL is not provided
+      continue; // Skip this file if URL (format) is not provided
     }
 
     if (FileName.endsWith('.pdf')) {

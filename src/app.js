@@ -66,7 +66,7 @@ const uploadRoute = require("../routes/upload")
 const queryRoute = require("../routes/query")
 const userRoutes = require("../routes/userRoute")
 const chatRoutes = require("../routes/chatRoute")
-
+const extractionRoutes = require("../routes/extractions")
 
 
 
@@ -76,6 +76,7 @@ app.use("/upload", uploadRoute)
 app.use("/query", queryRoute)
 app.use("/user", userRoutes)
 app.use("/chat", chatRoutes)
+app.use("/extractions", extractionRoutes)
 
 
 
