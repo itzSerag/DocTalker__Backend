@@ -13,6 +13,8 @@ public/
 package-lock.json
 node_modules/
 
+# prettier extention
+.prettierrc
 
 
 # Diagnostic reports (https://nodejs.org/api/report.html)
@@ -140,6 +142,9 @@ dist
 
 #npm 
 package-lock.json
+
+# rest http
+rest.http
 
 
 # End of https://www.toptal.com/developers/gitignore/api/node

@@ -1,7 +1,7 @@
 const webScraper = require('../utils/webScrapper');
 const youtubeTrans = require('../utils/youtubeExtraction');
 
-exports.extractWebpage = async (req, res) =>{
+exports.extractWebpage = async (req, res) => {
     const { url } = req.body;
 
     try {
@@ -11,9 +11,9 @@ exports.extractWebpage = async (req, res) =>{
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
+};
 
-exports.extractYoutube = async (req, res) =>{
+exports.extractYoutube = async (req, res) => {
     const { url } = req.body;
 
     try {
@@ -22,5 +22,4 @@ exports.extractYoutube = async (req, res) =>{
     } catch (error) {
         res.status(500).json({ error: error.message });
     }
-}
-
+};

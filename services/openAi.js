@@ -4,9 +4,9 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-let full = "";
 
-const OPEN_AI_COMPLETION_MODEL = "gpt-3.5-turbo-16k";
+
+const OPEN_AI_COMPLETION_MODEL = "gpt-3.5-turbo-16k"; // 16k tokens
 
 exports.getCompletion = async (prompt) => {
   const completion = await openai.chat.completions.create({

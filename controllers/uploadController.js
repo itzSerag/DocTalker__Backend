@@ -9,7 +9,7 @@ const uploadSingleFile = async (req, res) => {
         // Connect to the MongoDB database
         await connectDB();
         console.log('MongoDB Connected -- uploading single file phase -- ');
-        
+
         const file = req.file;
         const currUser = req.user;
 
@@ -20,39 +20,43 @@ const uploadSingleFile = async (req, res) => {
 
         // Upload the file to S3
         const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype);
-        
+
         // Save file info to the MongoDB database
         const myFile = new Doc({
             FileName: file.originalname,
             FileUrl: [dataLocation], // Store the URL as an array
         });
 
-        await myFile.save()
+        await myFile
+            .save()
             .then(() => {
                 const chat = new chatmodel({
                     documentId: myFile._id,
-                    chatName: slugify(file.originalname)
+                    chatName: slugify(file.originalname),
                 });
-                
-                chat.save().then(() => {
-                    // Increase the upload request for the user
-                    currUser.uploadRequest++;
-                    currUser.chats.push(chat._id);
-                    currUser.save();
-                    return res.status(200).json({
-                        message: 'File uploaded to S3 and MongoDB successfully',
-                        chatId: chat._id
+
+                chat.save()
+                    .then(() => {
+                        // Increase the upload request for the user
+                        currUser.uploadRequest++;
+                        currUser.chats.push(chat._id);
+                        currUser.save();
+                        return res.status(200).json({
+                            message: 'File uploaded to S3 and MongoDB successfully',
+                            chatId: chat._id,
+                        });
+                    })
+                    .catch((err) => {
+                        console.error('Error saving chat:', err);
+                        return res.status(500).json({ message: err.message });
                     });
-                }).catch(err => {
-                    console.error("Error saving chat:", err);
-                    return res.status(500).json({ message: err.message });
-                });
-            }).catch(err => {
-                console.error("Error saving file:", err);
+            })
+            .catch((err) => {
+                console.error('Error saving file:', err);
                 return res.status(500).json({ message: err.message });
             });
     } catch (err) {
-        console.error("Error uploading single file:", err);
+        console.error('Error uploading single file:', err);
         return res.status(500).json({ message: err.message });
     }
 };
@@ -71,7 +75,11 @@ const uploadFolder = async (req, res) => {
         for (let i = 0; i < files.length; i++) {
             const file = files[i];
 
-            if(file.mimetype === 'application/pdf' || file.mimetype === 'application/msword' || file.mimetype === 'text/plain'){ 
+            if (
+                file.mimetype === 'application/pdf' ||
+                file.mimetype === 'application/msword' ||
+                file.mimetype === 'text/plain'
+            ) {
                 const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype);
                 fileUrls.push(dataLocation);
             } else {
@@ -84,22 +92,26 @@ const uploadFolder = async (req, res) => {
                 FileUrl: [dataLocation],
             });
 
-            await myFile.save()
+            await myFile
+                .save()
                 .then(() => {
                     const chat = new chatmodel({
                         documentId: myFile._id,
-                        chatName: slugify(file.originalname)
+                        chatName: slugify(file.originalname),
                     });
-                    
-                    chat.save().then(() => {
-                        // Increase the upload request for the user
-                        currUser.uploadRequest++;
-                        currUser.save();
-                    }).catch(err => {
-                        console.error("Error saving chat:", err);
-                    });
-                }).catch(err => {
-                    console.error("Error saving file:", err);
+
+                    chat.save()
+                        .then(() => {
+                            // Increase the upload request for the user
+                            currUser.uploadRequest++;
+                            currUser.save();
+                        })
+                        .catch((err) => {
+                            console.error('Error saving chat:', err);
+                        });
+                })
+                .catch((err) => {
+                    console.error('Error saving file:', err);
                 });
         }
 
@@ -107,7 +119,7 @@ const uploadFolder = async (req, res) => {
             message: 'Files uploaded to S3 and MongoDB successfully',
         });
     } catch (err) {
-        console.error("Error uploading folder:", err);
+        console.error('Error uploading folder:', err);
         return res.status(500).json({ message: err.message });
     }
 };
@@ -121,7 +133,7 @@ exports.handler = async (req, res) => {
     // the files are sent -- check the console
     console.log('files:', req.files);
 
-    if(!req.user){
+    if (!req.user) {
         return res.status(400).json({ message: 'You are not logged or missing' });
     }
 
@@ -131,7 +143,7 @@ exports.handler = async (req, res) => {
 
     console.log('User:', currUser);
     // Check user's upload limit
-    const isOkayToUpload = (currUser.maxUploadRequest - currUser.uploadRequest) > 0;
+    const isOkayToUpload = currUser.maxUploadRequest - currUser.uploadRequest > 0;
     const userAuth = currUser.subscription;
 
     if (!isOkayToUpload) {
@@ -140,6 +152,8 @@ exports.handler = async (req, res) => {
         if (file) {
             // Upload single file
             return uploadSingleFile(req, res);
+
+
         } else if (files && userAuth !== 'free') {
             // Upload folder
             // Check the maximum files upload request and the quota of the user
@@ -153,6 +167,8 @@ exports.handler = async (req, res) => {
             }
 
             return uploadFolder(req, res);
+
+            
         } else {
             return res.status(400).json({ message: 'No file uploaded' });
         }
