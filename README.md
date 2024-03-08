@@ -1,11 +1,3 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DocTalker Web Application Usage Guide</title>
-</head>
-<body>
     <h1>DocTalker Web Application Usage Guide</h1>
 
     <h2>1. Upload Document</h2>
@@ -38,6 +30,3 @@
     </ul>
 
     <p>For any further assistance or inquiries, feel free to contact our support team. Happy document processing with DocTalker! 🚀</p>
-
-</body>
-</html>
