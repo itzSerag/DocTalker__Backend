@@ -5,13 +5,11 @@ const Doc = require('../models/document');
 const chatModel = require('../models/Chat');
 const userModel = require('../models/user');
 const { cosineSimilarity } = require('../utils/cosineSimilarity');
-const AppError = require('../utils/appError');
 
 exports.handler = async (req, res) => {
     try {
         await connectDB();
         const { _id: userId } = req.user;
-        // the chat id
         const { query, id } = req.body;
 
         const user = await userModel.findById(userId);
@@ -21,9 +19,6 @@ exports.handler = async (req, res) => {
         }
 
         const chats = user.chats;
-        console.log(chats, id);
-
-        
         if (!chats.includes(id)) {
             return res.status(400).json({ message: 'unauthorized' });
         }
@@ -42,7 +37,12 @@ exports.handler = async (req, res) => {
         let topThree = similarityResults.slice(0, 3).map((result) => result.chunk.rawText);
 
         const languageResponse = 'English';
-        const promptStart = `Answer the question based on the context below with ${languageResponse}:\n\n`;
+        const promptStart = `    You are a chatbot for extracted data from documents.
+                                 Answer the question based only 
+                                on the context below with ${languageResponse}:\n\n
+                                and dont use any other information\n\n
+                            `;
+
         const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
 
         const prompt = `${promptStart} ${topThree.join('\n')} ${promptEnd}`;

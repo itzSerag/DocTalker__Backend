@@ -65,7 +65,6 @@ const queryRoute = require('../routes/query');
 const userRoutes = require('../routes/userRoute');
 const chatRoutes = require('../routes/chatRoute');
 const extractionRoutes = require('../routes/extractions');
-const { log } = require('console');
 
 // Mount routes
 app.use('/payment', paymentRoutes);

@@ -6,15 +6,10 @@ const { generateToken } = require('../utils/generateToken');
 const { sendOTPEmail } = require('../utils/emailUtils');
 const { generateOTP } = require('../utils/generateOTP');
 const { validateEmail } = require('../utils/emailVaildation');
-const AppError = require('../utils/appError');
 
-exports.signup = async (req, res, next) => {
+exports.signup = async (req, res) => {
     try {
         const { firstName, lastName, email, password } = req.body;
-
-        if (!firstName || !lastName || !email || !password) {
-            return next(new AppError('Please provide all the required fields', 400));
-        }
 
         // check if user already exists
         let user = await User.findOne({ email });
@@ -34,33 +29,34 @@ exports.signup = async (req, res, next) => {
             password: hashedPassword,
         });
 
-        await user.save();
-
-        // Generate and store OTP
-        const otp = generateOTP();
-        const otpExpiresIn = new Date(Date.now() + 20 * 60 * 1000);
-        console.log(otp, otpExpiresIn);
-
-        await sendOTPEmail(email, otp)
-            .then(() => {
-                // sent successfully
-                // TODO: filter the user object before sending it to the client
-                res.status(200).json({ ...user._doc, token: generateToken({ _id: user._id }) });
-            })
-            .catch((error) => {
-                User.findByIdAndDelete(user._id).then(() => {
-                    console.error('Signup Error:', error);
-                    res.status(500).json({ error: 'Failed to send OTP' });
-                });
-            });
-
-        const otpDocument = new OTP({
-            email,
-            otp,
-            otpExpiresIn,
+        await user.save().then(() => {
+            res.status(200).json({ ...user._doc, token: generateToken({ _id: user._id }) });
         });
 
-        await otpDocument.save();
+        // // Generate and store OTP
+        // const otp = generateOTP();
+        // const otpExpiresIn = new Date(Date.now() + 20 * 60 * 1000);
+        // console.log(otp, otpExpiresIn);
+
+        // await sendOTPEmail(email, otp)
+        //     .then(() => {
+        //         // sent successfully
+        //         // TODO: filter the user object before sending it to the client
+        //     })
+        //     .catch((error) => {
+        //         User.findByIdAndDelete(user._id).then(() => {
+        //             console.error('Signup Error:', error);
+        //             res.status(500).json({ error: 'Failed to send OTP' });
+        //         });
+        //     });
+
+        // const otpDocument = new OTP({
+        //     email,
+        //     otp,
+        //     otpExpiresIn,
+        // });
+
+        // await otpDocument.save();
     } catch (error) {
         // handle error by deleting the user and the otp document
         const { email } = req.body;
@@ -193,7 +189,6 @@ exports.forgetPassword = async (req, res, next) => {
             const error = new CustomError('Invalid', 404);
             next(error);
         }
-
         const otp = generateOTP();
         const otpExpiresIn = new Date(Date.now() + 20 * 60 * 1000);
         await sendOTPEmail(email, otp);

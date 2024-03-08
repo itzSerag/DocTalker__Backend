@@ -2,53 +2,54 @@ const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
 const pdfParse = require('pdf-parse');
 const minify = require('string-minify');
 
-exports.convertDocToChunks = async (files) => {
+exports.convertDocToChunks = async (FileName, FileUrl) => {
+    // GET THEM FROM DB
+
     const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 512,
         chunkOverlap: 50,
     });
 
-    const allChunks = [];
+    let documentContent;
+    const myFileUrlString = FileName;
 
-    for (const file of files) {
-        const { FileName, FileUrl } = file;
-        let documentContent;
+    if (myFileUrlString.endsWith('.pdf')) {
+        // For PDF files
+        const pdfData = await fetch(FileUrl);
+        const buffer = await pdfData.arrayBuffer();
 
-        if (!FileUrl) {
-            console.log(`File URL not provided for ${FileName}`);
-            continue; // Skip this file if URL (format) is not provided
-        }
+        // extract text from pdf
+        const pdfText = await pdfParse(buffer);
+        documentContent = pdfText.text;
 
-        if (FileName.endsWith('.pdf')) {
-            // For PDF files
-            const pdfData = await fetch(FileUrl);
-            const buffer = await pdfData.arrayBuffer();
+        // TODO : ADD MORE FILE TYPES
+    } else if (FileUrl.endsWith('.docx')) {
+        // For Word documents (.docx)
+        const docxData = await fetch(FileUrl);
+        const buffer = await docxData.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer: buffer });
+        documentContent = result.value;
 
-            // Extract text from pdf
-            const pdfText = await pdfParse(buffer);
-            documentContent = pdfText.text;
+        // TXT FILES
+    } else if (FileUrl.endsWith('.txt')) {
+        // For plain text files
+        const txtData = await fetch(myFile.fileUrl);
 
-            // Minify the text
-            documentContent = minify(documentContent);
-        } else if (FileName.endsWith('.docx')) {
-            // For Word documents (.docx)
-            const docxData = await fetch(FileUrl);
-            const buffer = await docxData.arrayBuffer();
-            const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-            documentContent = result.value;
-        } else if (FileName.endsWith('.txt')) {
-            // For plain text files
-            const txtData = await fetch(FileUrl);
-            documentContent = await txtData.text();
-        } else {
-            console.log(`Unsupported file type for ${FileName}`);
-            continue; // Skip this file if the file type is unsupported
-        }
+        documentContent = await txtData.text();
+    } else {
+        // Unsupported file type
 
-        // Split the text into chunks
-        const chunks = await splitter.splitText(documentContent);
-        allChunks.push(...chunks);
+        // TODO : ADD MORE FILE TYPES
+        // TODO : ADD A FUNCTION TO EXTRACT TEXT FROM WEBSITES
+        return NULL;
     }
 
-    return allChunks;
+    // Minify the text
+    documentContent = minify(documentContent);
+    console.log(documentContent);
+
+    // Split the text into chunks
+    const chunks = await splitter.splitText(documentContent);
+
+    return chunks;
 };
