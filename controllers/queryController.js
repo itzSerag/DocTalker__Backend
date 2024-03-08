@@ -10,7 +10,7 @@ exports.handler = async (req, res) => {
     try {
         await connectDB();
         const { _id: userId } = req.user;
-        const { query, id } = req.body;
+        const { query, chatId } = req.body;
 
         const user = await userModel.findById(userId);
 
@@ -19,11 +19,11 @@ exports.handler = async (req, res) => {
         }
 
         const chats = user.chats;
-        if (!chats.includes(id)) {
+        if (!chats.includes(chatId)) {
             return res.status(400).json({ message: 'unauthorized' });
         }
 
-        const chat = await chatModel.findById(id);
+        const chat = await chatModel.findById(chatId);
         let chunks = await Doc.findById(chat.documentId).select('Chunks -_id');
         chunks = chunks.Chunks;
         const questionEmb = await getEmbeddings(query);
