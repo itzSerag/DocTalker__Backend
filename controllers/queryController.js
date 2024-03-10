@@ -28,19 +28,21 @@ exports.handler = async (req, res) => {
         chunks = chunks.Chunks;
         const questionEmb = await getEmbeddings(query);
         const similarityResults = [];
+
         chunks.forEach((chunk) => {
             const similarity = cosineSimilarity(questionEmb, chunk.embeddings);
             similarityResults.push({ chunk, similarity });
         });
 
-        similarityResults.sort((a, b) => b.similarity - a.similarity);
+        similarityResults.sort((a, b) => b.similarity - a.similarity); // sort by similarity
+
         let topThree = similarityResults.slice(0, 3).map((result) => result.chunk.rawText);
 
         const languageResponse = 'English';
         const promptStart = `    You are a chatbot for extracted data from documents.
                                  Answer the question based only 
-                                on the context below with ${languageResponse}:\n\n
-                                and dont use any other information\n\n
+                                on the context below in details with ${languageResponse}:\n\n
+                                and dont use any other information\n here is the top 3 most relevant context: \n\n
                             `;
 
         const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;

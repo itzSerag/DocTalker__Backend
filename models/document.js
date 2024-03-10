@@ -1,31 +1,47 @@
 const mongoose = require('mongoose');
 
-
-const documentSchema = new mongoose.Schema({
-    FileName: {
-        type: String,
-        required: true
+const documentSchema = new mongoose.Schema(
+    {
+        FileName: {
+            type: String,
+            required: true,
+        },
+        Files: [
+            {
+                FileName: {
+                    type: String,
+                    required: true,
+                },
+                FileKey: {
+                    type: String,
+                    required: true,
+                },
+                FileURL: {
+                    // only for s3
+                    type: String,
+                },
+                Chunks: [
+                    {
+                        rawText: {
+                            type: String,
+                        },
+                        embeddings: [Number],
+                    },
+                ],
+                isProcessed: {
+                    type: Boolean,
+                    default: false,
+                },
+            },
+        ],
+        isProcessed: {
+            type: Boolean,
+            default: false,
+        },
     },
-    FileUrl: {
-        type: [String],
-        required: true
-    },
-    
-    Chunks : [
-        {
-            rawText : String,
-            embeddings : [Number]
-        }
-    ] ,
-
-    isProcessed: {
-        type: Boolean,
-        default: false
-   }
-
-}, {
-    timestamps: true
-});
-
+    {
+        timestamps: true,
+    }
+);
 
 module.exports = mongoose.model('Document', documentSchema);
