@@ -91,7 +91,10 @@ exports.fileUpload = async (req, res, next) => {
 exports.folderUpload = async (req, res, next) => {
     const currUser = req.user;
     const files = req.files;
+
     let { folderName } = req.body;
+
+    console.log(folderName + '  folder name');
     const freeUser = await isUserFree(req, res);
 
     if (folderName === undefined) {

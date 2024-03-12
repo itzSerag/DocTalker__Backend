@@ -9,7 +9,8 @@ const { cosineSimilarity } = require('../utils/cosineSimilarity');
 exports.handler = async (req, res) => {
     try {
         await connectDB();
-        const { _id: userId } = req.user;
+        const { _id: userId } = req.user; // from the auth middleware
+
         const { query, chatId } = req.body;
 
         const user = await userModel.findById(userId);
@@ -22,6 +23,8 @@ exports.handler = async (req, res) => {
         if (!chats.includes(chatId)) {
             return res.status(400).json({ message: 'unauthorized' });
         }
+
+        
 
         const chat = await chatModel.findById(chatId);
         let chunks = await Doc.findById(chat.documentId).select('Chunks -_id');
@@ -51,12 +54,12 @@ exports.handler = async (req, res) => {
         let chatHistory = chat.messages.map((message) => {
             return { role: message.role, content: message.content };
         });
-        chatHistory.push({ role: 'user', content: prompt });
-        let response = await getCompletion(chatHistory);
-        response = response.choices[0].message;
-        if (!response) {
-            return res.status(400).json({ message: 'error' });
-        }
+        let response = await getCompletion(req, res, prompt);
+
+        // response = response.choices[0].message;
+        // if (!response) {
+        //     return res.status(400).json({ message: 'error' });
+        // }
 
         //Push the query and response to the chatModel
         chat.messages.push({ role: 'user', content: query });

@@ -11,7 +11,7 @@ exports.isOkayToUpload = async (req, res) => {
 
 exports.isUserFree = async (req, res) => {
     try {
-        // Ensure req.user is populated
+        // Ensure req.user is populated -- 
         const currUser = req.user;
         if (!currUser) {
             // Handle case where req.user is not populated
