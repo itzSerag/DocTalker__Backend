@@ -1,6 +1,6 @@
     <h1>DocTalker Web Application Usage Guide</h1>
 
-    <h2>1. Upload Document</h2>
+    <h2>1. Upload Document</h>
     <ul>
         <li><strong>Endpoint:</strong> /upload/upload</li>
         <li><strong>Functionality:</strong> Uploads a PDF file to AWS S3 and saves its location to MongoDB.</li>
