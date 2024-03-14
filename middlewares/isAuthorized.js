@@ -1,6 +1,3 @@
-// Import necessary modules for database integration
-// Example: const db = require('./database');
-
 const subscriptions = {
     free: {
         maxUploadRequest: 2,
