@@ -36,17 +36,19 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         const txtData = await fetch(myFile.fileUrl);
 
         documentContent = await txtData.text();
+    } else if (FileUrl.endsWith('.png' || '.jpg' || '.jpeg' || '.gif' || '.svg' || '.bmp' || '.tiff' || '.webp')) {
+        // TODO : ADD MORE FILE TYPES
+        // extract using google lens and put in in txt file
+        return NULL;
     } else {
         // Unsupported file type
 
-        // TODO : ADD MORE FILE TYPES
         // TODO : ADD A FUNCTION TO EXTRACT TEXT FROM WEBSITES
         return NULL;
     }
 
     // Minify the text
     documentContent = minify(documentContent);
-    console.log(documentContent);
 
     // Split the text into chunks
     const chunks = await splitter.splitText(documentContent);

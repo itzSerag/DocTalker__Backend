@@ -5,69 +5,58 @@ const Doc = require('../models/document');
 const chatModel = require('../models/Chat');
 const userModel = require('../models/user');
 const { cosineSimilarity } = require('../utils/cosineSimilarity');
+const catchAsync = require('../utils/catchAsync');
+const AppError = require('../utils/appError');
 
-exports.handler = async (req, res) => {
-    try {
-        await connectDB();
-        const { _id: userId } = req.user; // from the auth middleware
+exports.handler = catchAsync(async (req, res, next) => {
+    await connectDB();
+    const { query, chatId } = req.body;
 
-        const { query, chatId } = req.body;
+    const user = req.user;
 
-        const user = await userModel.findById(userId);
+    const chats = user.chats;
+    if (!chats.includes(chatId)) {
+        return res.status(400).json({ message: 'unauthorized' });
+    }
 
-        if (!user) {
-            return res.status(400).json({ message: 'user not found' });
-        }
+    const chat = await chatModel.findById(chatId);
+    let chunks = await Doc.findById(chat.documentId).select('Chunks -_id');
+    chunks = chunks.Chunks;
+    const questionEmb = await getEmbeddings(query);
+    const similarityResults = [];
 
-        const chats = user.chats;
-        if (!chats.includes(chatId)) {
-            return res.status(400).json({ message: 'unauthorized' });
-        }
+    chunks.forEach((chunk) => {
+        const similarity = cosineSimilarity(questionEmb, chunk.embeddings);
+        similarityResults.push({ chunk, similarity });
+    });
 
-        
+    similarityResults.sort((a, b) => b.similarity - a.similarity); // sort by similarity
 
-        const chat = await chatModel.findById(chatId);
-        let chunks = await Doc.findById(chat.documentId).select('Chunks -_id');
-        chunks = chunks.Chunks;
-        const questionEmb = await getEmbeddings(query);
-        const similarityResults = [];
+    let topThree = similarityResults.slice(0, 3).map((result) => result.chunk.rawText);
 
-        chunks.forEach((chunk) => {
-            const similarity = cosineSimilarity(questionEmb, chunk.embeddings);
-            similarityResults.push({ chunk, similarity });
-        });
-
-        similarityResults.sort((a, b) => b.similarity - a.similarity); // sort by similarity
-
-        let topThree = similarityResults.slice(0, 3).map((result) => result.chunk.rawText);
-
-        const languageResponse = 'English';
-        const promptStart = `    You are a chatbot for extracted data from documents.
+    const languageResponse = 'English';
+    const promptStart = `    You are a chatbot for extracted data from documents.
                                  Answer the question based only 
                                 on the context below in details with ${languageResponse}:\n\n
                                 and dont use any other information\n here is the top 3 most relevant context: \n\n
                             `;
 
-        const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
+    const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
 
-        const prompt = `${promptStart} ${topThree.join('\n')} ${promptEnd}`;
-        let chatHistory = chat.messages.map((message) => {
-            return { role: message.role, content: message.content };
-        });
-        let response = await getCompletion(req, res, prompt);
+    const prompt = `${promptStart} ${topThree.join('\n')} ${promptEnd}`;
+    let chatHistory = chat.messages.map((message) => {
+        return { role: message.role, content: message.content };
+    });
+    let response = await getCompletion(req, res, prompt);
 
-        // response = response.choices[0].message;
-        // if (!response) {
-        //     return res.status(400).json({ message: 'error' });
-        // }
+    // response = response.choices[0].message;
+    // if (!response) {
+    //     return res.status(400).json({ message: 'error' });
+    // }
 
-        //Push the query and response to the chatModel
-        chat.messages.push({ role: 'user', content: query });
-        chat.messages.push(response);
-        await chat.save();
-        return res.status(200).json({ response });
-    } catch (error) {
-        console.log(error.message);
-        return res.json({ error: error.message });
-    }
-};
+    //Push the query and response to the chatModel
+    chat.messages.push({ role: 'user', content: query });
+    chat.messages.push(response);
+    await chat.save();
+    return res.status(200).json({ response });
+});
