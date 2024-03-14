@@ -1,3 +1,5 @@
+const AppError = require('../utils/appError');
+
 const subscriptions = {
     free: {
         maxUploadRequest: 2,
@@ -26,12 +28,12 @@ exports.checkSubscription = () => {
     return (req, res, next) => {
         const { subscription } = req.user;
         if (!subscription || !subscriptions[subscription]) {
-            return res.status(403).json({ message: 'Invalid subscription. Please upgrade your plan.' });
+            return next(new AppError('Invalid subscription type', 400));
         }
         if (subscription === 'premium' || subscription === 'admin') {
             return next();
         }
-        return res.status(403).json({ message: 'Upgrade your plan to access this feature' });
+        return next(new AppError('You are not authorized to access this resource', 403));
     };
 };
 
@@ -41,7 +43,7 @@ exports.checkUploadRequest = (req, res, next) => {
     if (req.user.uploadRequest < maxUploadRequest) {
         next();
     } else {
-        return res.status(403).json({ message: 'You have reached your upload limit' });
+        return next(new AppError('You have reached your upload limit of Uploading', 403));
     }
 };
 
@@ -51,7 +53,7 @@ exports.checkQueryRequest = (req, res, next) => {
     if (req.user.queryRequest < queryMax) {
         next();
     } else {
-        return res.status(403).json({ message: 'You have reached your query limit' });
+        return next(new AppError('You have reached your query limit of Uploading', 403));
     }
 };
 
@@ -63,11 +65,13 @@ exports.checkFileType = (req, res, next) => {
         files.push(req.file);
     } else if (req.files && Array.isArray(req.files)) {
         files = req.files;
+    } else {
+        return next(new AppError('No files found in the request', 400));
     }
 
     // Check if there are any files to process
     if (files.length === 0) {
-        return res.status(400).json({ message: 'No files found in the request' });
+        return next(new AppError('No files found in the request', 400));
     }
 
     const { subscription } = req.user;
@@ -80,7 +84,7 @@ exports.checkFileType = (req, res, next) => {
         if (supportedFiles.includes('all') || supportedFiles.includes(fileExtension)) {
             continue;
         } else {
-            return res.status(403).json({ message: 'File type not supported in your plan. Please upgrade your plan.' });
+            return next(new AppError(`File type ${fileExtension} not supported`, 400));
         }
     }
     next();
