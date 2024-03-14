@@ -10,10 +10,6 @@ exports.fileUpload = async (req, res, next) => {
         const file = req.file;
         const currUser = req.user;
 
-        if (!file) {
-            return next(new AppError('Please upload a file', 400));
-        }
-
         await connectDB();
 
         const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype);
@@ -51,8 +47,6 @@ exports.fileUpload = async (req, res, next) => {
         return res.status(500).json({ message: err.message });
     }
 };
-
-
 
 exports.folderUpload = async (req, res, next) => {
     try {
