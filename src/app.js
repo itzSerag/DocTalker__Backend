@@ -15,12 +15,6 @@ if (process.env.NODE_ENV === 'development') {
     app.use(morgan('dev')); // development logging
 }
 
-// set the view engine to ejs
-app.set('view engine', 'ejs');
-
-// set the public folder
-app.use(express.static('public'));
-
 const PORT = process.env.PORT || 5000;
 
 // CORS middleware
@@ -52,7 +46,7 @@ app.use(passport.session());
 // Home auth
 app.get('/', (req, res) => {
     try {
-        res.render('index');
+        res.status(200).json({ status: 'success', message: 'Welcome to the home page' });
     } catch (err) {
         res.status(500).json({ status: 'error' });
     }
@@ -73,6 +67,8 @@ app.use('/query', queryRoute);
 app.use('/user', userRoutes);
 app.use('/chat', chatRoutes);
 app.use('/extractions', extractionRoutes);
+
+
 
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {

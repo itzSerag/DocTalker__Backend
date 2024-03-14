@@ -30,8 +30,9 @@ const userSchema = new mongoose.Schema(
         // },
         subscription: {
             type: String,
-            enum: ['free', 'gold', 'premium'],
+            enum: ['free', 'gold', 'premium' , 'admin'],
             default: 'free',
+            errorMessage: 'Invalid subscription type',
         },
         // stripeCustomerId: {
         //     type: String,

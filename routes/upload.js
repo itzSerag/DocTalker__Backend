@@ -3,32 +3,15 @@ const { fileUpload, folderUpload } = require('../controllers/uploadController');
 const processController = require('../controllers/processController');
 const { upload } = require('../utils/uploadFile');
 const { auth } = require('../middlewares/auth');
-const {
-  checkUploadRequest,
-  checkFileType,
-} = require('../middlewares/isAuthorized');
+const { checkUploadRequest, checkFileType } = require('../middlewares/isAuthorized');
 
 const router = express.Router();
 
 // Handle single file upload
-router.post(
-  '/upload',
-  auth,
-  upload.single('file'),
-  checkUploadRequest,
-  checkFileType,
-  fileUpload
-);
+router.post('/upload', auth, checkUploadRequest, upload.single('file'), checkFileType, fileUpload);
 
 // Handle folder upload
-router.post(
-  '/uploadfolder',
-  auth,
-  upload.array('files'),
-  checkUploadRequest,
-  checkFileType,
-  folderUpload
-);
+router.post('/uploadFolder', auth, checkUploadRequest, upload.array('files'), checkFileType, folderUpload);
 
 // Handle processing
 router.post('/process', auth, processController.handler);
