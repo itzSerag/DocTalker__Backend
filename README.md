@@ -1,6 +1,6 @@
 <h1>DocTalker Web Application Usage Guide</h1>
 
-<h2>1. Upload Document</h>
+<h3>1. Upload Document</h3>
 <ul>
         <li><strong>Endpoint:</strong> /upload/upload</li>
         <li><strong>Functionality:</strong> Uploads a PDF file to AWS S3 and saves its location to MongoDB.</li>
@@ -23,7 +23,7 @@
 
 <h3>Additional Notes:</h3>
 <ul>
-    <li>Ensure the uploaded document is in PDF format.</li>
+    <li>Ensure the uploaded document is in PDF , Doxc , txt format.</li>
     <li>The document processing step involves extracting meaningful information and generating embeddings for efficient querying.</li>
     <li>Queries are processed to find the most relevant chunks in the document.</li>
     <li>Utilize the provided endpoints with the specified parameters to seamlessly interact with the DocTalker application.</li>
