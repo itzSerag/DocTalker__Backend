@@ -56,6 +56,7 @@ exports.fileUpload = async (req, res, next) => {
 };
 
 exports.folderUpload = async (req, res, next) => {
+
   const currUser = req.user;
   const files = req.files;
   let { folderName } = req.body;
@@ -83,6 +84,22 @@ exports.folderUpload = async (req, res, next) => {
     // Check if the file object exists
     if (!files || Object.keys(req.files).length === 0) {
       return next(new AppError('Please upload the files', 400));
+
+    const currUser = req.user;
+    const files = req.files;
+
+    let { folderName } = req.body;
+
+    console.log(folderName + '  folder name');
+    const freeUser = await isUserFree(req, res);
+
+    if (folderName === undefined) {
+        folderName = 'default5569';
+    }
+
+    if (freeUser) {
+        return next(new AppError('Only Premimum & Gold Users are allowed.', 400));
+
     }
 
     // 4. upload the file to s3
