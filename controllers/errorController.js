@@ -28,7 +28,7 @@ module.exports = (err, req, res, next) => {
     err.status = err.status || 'error';
 
     res.status(error.statusCode).json({
-        status: error.status,
+        status: error.status + ' from errorController',
         statusCode: error.statusCode,
         message: error.message, // the message that comes form the err
         error: err, // the whole error object

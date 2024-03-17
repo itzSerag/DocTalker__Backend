@@ -24,7 +24,7 @@
         "express-session": "^1.17.3",
         "jsonwebtoken": "^9.0.2",
         "langchain": "^0.0.199",
-        "mammoth": "^1.6.0",
+        "mammoth": "^1.7.0",
         "mathjs": "^12.1.0",
         "mongodb": "^5.9.1",
         "mongoose": "^7.6.3",

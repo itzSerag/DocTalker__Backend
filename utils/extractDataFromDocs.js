@@ -1,6 +1,7 @@
 const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
 const pdfParse = require('pdf-parse');
 const minify = require('string-minify');
+const mammoth = require('mammoth');
 
 exports.convertDocToChunks = async (FileName, FileUrl) => {
     // GET THEM FROM DB

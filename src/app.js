@@ -75,7 +75,7 @@ app.all('*', (req, res, next) => {
     next(new AppError(`cant find ${req.originalUrl} on this server`, 404));
 });
 
-// remmber 4 -- > fail and 5 --> error
+// remmber 4.x.x -- > fail and 5.x.x --> error
 
 // Global error handling middleware
 app.use(golbalErrorHandler);
