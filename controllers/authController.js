@@ -1,5 +1,5 @@
 // authController.js
-const User = require('../models/user');
+const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const OTP = require('../models/OTP');
 const { generateToken } = require('../utils/generateToken');

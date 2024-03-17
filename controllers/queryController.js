@@ -1,9 +1,9 @@
 const { getCompletion } = require('../services/openAi');
 const { getEmbeddings } = require('../services/huggingface');
 const { connectDB } = require('../config/database');
-const Doc = require('../models/document');
+const Doc = require('../models/Document');
 const chatModel = require('../models/Chat');
-const userModel = require('../models/user');
+const userModel = require('../models/User');
 const { cosineSimilarity } = require('../utils/cosineSimilarity');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');

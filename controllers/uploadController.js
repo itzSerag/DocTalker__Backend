@@ -1,13 +1,13 @@
 const { connectDB } = require('../config/database');
-const Doc = require('../models/document');
+const Doc = require('../models/Document');
 const slugify = require('slugify');
 const { uploadFile, uploadFolder } = require('../services/aws');
 const chatModel = require('../models/Chat');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const Mongoose = require('mongoose');
-const User = require('../models/user');
-const { LEGAL_TCP_SOCKET_OPTIONS } = require('mongodb');
+const User = require('../models/User');
+
 
 exports.fileUpload = catchAsync(async (req, res, next) => {
     let session;

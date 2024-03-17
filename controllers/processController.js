@@ -1,4 +1,4 @@
-const DocumentModel = require('../models/document');
+const DocumentModel = require('../models/Document');
 const ChatModel = require('../models/Chat'); // Update Chat model import
 const { connectDB } = require('../config/database');
 const { convertDocToChunks } = require('../utils/extractDataFromDocs');

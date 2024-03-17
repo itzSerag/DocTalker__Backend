@@ -59,6 +59,7 @@ const queryRoute = require('../routes/query');
 const userRoutes = require('../routes/userRoute');
 const chatRoutes = require('../routes/chatRoute');
 const extractionRoutes = require('../routes/extractions');
+const feedbackRoutes = require('../routes/feedbackRoute');
 
 // Mount routes
 app.use('/payment', paymentRoutes);
@@ -67,8 +68,7 @@ app.use('/query', queryRoute);
 app.use('/user', userRoutes);
 app.use('/chat', chatRoutes);
 app.use('/extractions', extractionRoutes);
-
-
+app.use('/feedback', feedbackRoutes);
 
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {

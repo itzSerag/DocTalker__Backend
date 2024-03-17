@@ -1,6 +1,6 @@
-const userModel = require('../models/user');
+const userModel = require('../models/User');
 const chatModel = require('../models/Chat');
-const Doc = require('../models/document');
+const Doc = require('../models/Document');
 
 exports.getAllChats = async (req, res) => {
     try {

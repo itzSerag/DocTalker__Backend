@@ -1,6 +1,8 @@
-const User = require('../models/user');
+const User = require('../models/User');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
+
+// TODO : APPLY AppError and catchAsync
 
 exports.updateUser = catchAsync(async (req, res) => {
     const { _id: id } = req.user;
