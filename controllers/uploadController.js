@@ -7,175 +7,120 @@ const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const Mongoose = require('mongoose');
 const User = require('../models/user');
+const { LEGAL_TCP_SOCKET_OPTIONS } = require('mongodb');
 
 exports.fileUpload = catchAsync(async (req, res, next) => {
-    const session = await Mongoose.startSession();
-    const file = req.file;
-    const currUser = req.user;
-
+    let session;
     try {
+        session = await Mongoose.startSession();
+        session.startTransaction(session.defaultTransactionOptions);
+
         if (req.method !== 'POST') {
-            return next(new AppError(`Method ${req.method} not supported`, 400));
+            throw new AppError(`Method ${req.method} not supported`, 400);
         }
 
-        await connectDB().catch((err) => {
-            console.error(err);
-            throw new AppError('Error connecting to MongoDB', 500);
-        });
+        const file = req.file;
+        const currUser = req.user;
+
+        await connectDB();
 
         const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype);
 
-        session.startTransaction(session.defaultTransactionOptions);
+        const myFile = new Doc({
+            FileName: file.originalname,
+            Files: [
+                {
+                    FileName: file.originalname,
+                    FileKey: file.originalname,
+                    FileURL: dataLocation,
+                },
+            ],
+        });
 
-        const myFile = await Doc.create([
-            {
-                FileName: file.originalname,
-                Files: [
-                    {
-                        FileName: file.originalname,
-                        FileKey: file.originalname,
-                        FileURL: dataLocation,
-                    },
-                ],
-            }],
-            {
-                session: session,
-                new: true,
-            }
-        );
+        await myFile.save({ session });
 
-        const chat = await chatModel.create([
-            {
-                documentId: myFile[0]._id,
-                chatName: slugify(file.originalname),
-            }],
-            {
-                session: session,
-                new: true,
-            }
-        );
+        const chat = new chatModel({
+            documentId: myFile._id,
+            chatName: slugify(file.originalname),
+        });
 
-        const user = await User.findOneAndUpdate(
-            { _id: currUser._id },
-            {
-                $inc: { uploadRequest: 1 }, // Increment uploadRequest by 1
-                $push: { chats: chat._id }, // Push chat id to chats array
-            },
-            {
-                session: session,
-                new: true,
-            }
-        );
+        await chat.save({ session });
+
+        currUser.uploadRequest += 1;
+        currUser.chats.push(chat._id);
+
+        await currUser.save({ session });
 
         await session.commitTransaction();
 
         return res.status(200).json({
-            status: 'success',
             message: 'File uploaded to S3 and MongoDB successfully',
-            chatId: chat[0]._id,
+            chatId: chat._id,
         });
     } catch (err) {
         await session.abortTransaction();
-        console.error(err);
-        return next(new AppError('Error uploading file', 500));
+        return next(err);
+    } finally {
+        session.endSession();
     }
 });
 
 exports.folderUpload = catchAsync(async (req, res, next) => {
-    const session = await Mongoose.startSession();
-    const currUser = req.user;
-    const files = req.files;
-    let { folderName } = req.body;
-
-    if (req.method !== 'POST') {
-        return next(new AppError(`Method ${req.method} not supported`, 400));
-    }
-
-    if (!folderName) {
-        folderName = 'default5569';
-    }
-
-    await connectDB().catch((err) => {
-        console.error(err);
-        return next(new AppError('Error connecting to MongoDB', 500));
-    });
-
+    let session;
     try {
-        // *      -- NOTE : every model model is array of one element now *  //
-
-        console.log('folderName: ' + folderName);
-        console.log('files: ' + files);
+        session = await Mongoose.startSession();
         session.startTransaction(session.defaultTransactionOptions);
+
+        if (req.method !== 'POST') {
+            throw new AppError(`Method ${req.method} not supported`, 400);
+        }
+
+        let { folderName } = req.body;
+        const files = req.files;
+        const currUser = req.user;
+
+        await connectDB();
+
+        if (!folderName) {
+            folderName = 'default5569';
+        }
 
         const dataLocation = await uploadFolder(files, folderName);
 
-        const folder = await Doc.create(
-            [
-                {
-                    FileName: folderName,
-                    Files: files.map((file) => ({
-                        FileName: file.originalname,
-                        FileKey: file.originalname,
-                        FileURL: dataLocation[files.indexOf(file)],
-                    })),
-                },
-            ],
-            {
-                session: session,
-            }
-        );
+        const folder = new Doc({
+            FileName: folderName,
+            Files: files.map((file) => ({
+                FileName: file.originalname,
+                FileKey: file.originalname,
+                FileURL: dataLocation[files.indexOf(file)],
+            })),
+        });
 
-        console.log(folder);
+        await folder.save({ session });
 
-        // await folder.save().catch((err) => {
-        //     console.error(err);
-        //     return next(new AppError('Error saving folder to MongoDB', 500));
-        // });
+        const chat = new chatModel({
+            documentId: folder._id,
+            chatName: slugify(folderName),
+        });
 
-        const chat = await chatModel.create(
-            [
-                {
-                    documentId: folder[0]._id,
-                    chatName: slugify(folderName),
-                },
-            ],
-            {
-                session: session,
-                new: true,
-            }
-        );
+        await chat.save({ session });
 
-        console.log(chat);
+        currUser.uploadRequest += files.length;
+        currUser.chats.push(chat._id);
 
-        // await chat.save().catch((err) => {
-        //     console.error(err);
-        //     return next(new AppError('Error saving chat to MongoDB', 500));
-        // });
+        await currUser.save({ session });
 
-        // With this block
-        const user = await User.findOneAndUpdate(
-            { _id: currUser._id },
-            {
-                $inc: { uploadRequest: files.length }, // Increment uploadRequest
-                $push: { chats: chat[0]._id },
-            },
-            {
-                session: session,
-                new: true,
-            }
-        );
-
-        console.log('chat id :' + chat[0]._id);
         await session.commitTransaction();
 
         return res.status(200).json({
             status: 'success',
             message: 'Folder uploaded to S3 and MongoDB successfully',
-            chatId: chat[0]._id || 'undefined -- error',
+            chatId: chat._id,
         });
     } catch (err) {
         await session.abortTransaction();
-        console.error(err);
-        return next(new AppError('Error uploading folder', 500));
+        return next(err);
+    } finally {
+        session.endSession();
     }
 });
