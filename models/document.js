@@ -20,6 +20,7 @@ const documentSchema = new mongoose.Schema(
                 FileURL: {
                     // only for s3
                     type: String,
+                    required: true,
                 },
                 Chunks: [
                     {

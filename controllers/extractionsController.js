@@ -10,6 +10,8 @@ const { getEmbeddings } = require('../services/huggingface');
 const chatModel = require('../models/Chat');
 const slugify = require('slugify');
 const { log } = require('console');
+const util = require('util');
+const readFileAsync = util.promisify(fs.readFile);
 
 const makeTextFile = (text, fileName) => {
     const filePath = `./temp/${fileName + '_'}${Date.now()}.txt`;
@@ -22,19 +24,32 @@ const makeTextFile = (text, fileName) => {
     };
 };
 
-const uploadTxtFileToS3 = catchAsync(async (fileInfoObj) => {
-    const fileName = fileInfoObj.fileName;
-    const filePath = fileInfoObj.filePath;
+const uploadTxtFileToS3 = (fileInfoObj) => {
+    return new Promise(async (resolve, reject) => {
+        const fileName = fileInfoObj.fileName;
+        const filePath = fileInfoObj.filePath;
 
-    console.log('fileName ::: ' + fileName);
-    const file = fs.readFileSync(filePath);
-    const url = await uploadFile(fileName, file, 'text/plain');
+        console.log('fileName ::: ' + fileName);
 
-    fs.unlinkSync(fileName); // to not load on the sever
+        try {
+            // Read file asynchronously
+            const file = await readFileAsync(filePath);
 
-    console.log('AWS URL ::: ' + url);
-    return url;
-});
+            // Upload file to S3
+            const AWSUrl = await uploadFile(fileName, file, 'text/plain');
+
+            console.log('AWS URL ::: ' + AWSUrl);
+
+            fs.unlinkSync(filePath);
+
+            resolve(AWSUrl);
+        } catch (err) {
+            // Handle errors
+            console.error('Error:', err);
+            reject(err);
+        }
+    });
+};
 
 exports.extractContent = catchAsync(async (req, res, next) => {
     if (!req.body.url) return next(new AppError('Please provide a URL', 400));
@@ -42,7 +57,7 @@ exports.extractContent = catchAsync(async (req, res, next) => {
     const { url } = req.body;
     const currUser = req.user; // Assuming req.user contains the current user information
 
-    let text, fileName, dataLocation, fileInfo, filePath;
+    let text, fileName, fileInfo, filePath, dataLocation;
 
     if (isYoutubeURL(url)) {
         // If it's a YouTube URL, extract transcript
@@ -59,7 +74,7 @@ exports.extractContent = catchAsync(async (req, res, next) => {
         fileName = fileInfo.fileName;
     }
 
-    dataLocation = uploadTxtFileToS3(fileInfo);
+    dataLocation = await uploadTxtFileToS3(fileInfo);
 
     const fileNameWithoutTimestamp = extractFileName(fileName);
 

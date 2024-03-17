@@ -2,9 +2,13 @@ const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
 const pdfParse = require('pdf-parse');
 const minify = require('string-minify');
 const mammoth = require('mammoth');
+const { log } = require('console');
+const fetch = require('node-fetch');
 
 exports.convertDocToChunks = async (FileName, FileUrl) => {
     // GET THEM FROM DB
+
+    log('FileName ::: ' + FileName + ' FileUrl ::: ' + FileUrl);
 
     const splitter = new RecursiveCharacterTextSplitter({
         chunkSize: 512,
@@ -34,8 +38,7 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         // TXT FILES
     } else if (FileUrl.endsWith('.txt')) {
         // For plain text files
-        const txtData = await fetch(myFile.fileUrl);
-
+        const txtData = await fetch(FileUrl);
         documentContent = await txtData.text();
     } else if (FileUrl.endsWith('.png' || '.jpg' || '.jpeg' || '.gif' || '.svg' || '.bmp' || '.tiff' || '.webp')) {
         // TODO : ADD MORE FILE TYPES
