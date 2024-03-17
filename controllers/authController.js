@@ -73,6 +73,7 @@ exports.login = catchAsync(async (req, res) => {
         return res.status(400).json({ message: 'Invalid password.' });
     }
 
+    // Dont send the password to the client
     res.status(200).json({ ...user._doc, token: generateToken({ _id: user._id }) });
 });
 

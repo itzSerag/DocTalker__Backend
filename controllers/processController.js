@@ -26,6 +26,7 @@ exports.handler = catchAsync(async (req, res, next) => {
         return next(new AppError('Document ID not found', 404));
     }
 
+    // OPTIONAL
     if (document.isProcessed) {
         return next(new AppError('Document has already been processed', 400));
     }

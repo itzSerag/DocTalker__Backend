@@ -75,6 +75,8 @@ exports.checkFileType = (req, res, next) => {
     }
 
     const { subscription } = req.user;
+
+    // return an array of user supported files -- according to the user plan
     const supportedFiles = subscriptions[subscription].supportedFiles;
 
     // Loop through each file and check its type
