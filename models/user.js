@@ -23,6 +23,7 @@ const userSchema = new mongoose.Schema(
         password: {
             type: String,
             required: true,
+            errorMessage: 'Password is required',
         },
         // googleId: {
         //     type: String,
@@ -30,7 +31,7 @@ const userSchema = new mongoose.Schema(
         // },
         subscription: {
             type: String,
-            enum: ['free', 'gold', 'premium' , 'admin'],
+            enum: ['free', 'gold', 'premium', 'admin'],
             default: 'free',
             errorMessage: 'Invalid subscription type',
         },
@@ -48,6 +49,14 @@ const userSchema = new mongoose.Schema(
         // array of chat ids that the user is in
 
         chats: [
+            {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'Chat',
+            },
+        ],
+
+        // array of chat ids that the user has starred
+        starMessages: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Chat',

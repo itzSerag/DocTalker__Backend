@@ -20,12 +20,15 @@ exports.handler = catchAsync(async (req, res, next) => {
     }
 
     const chat = await chatModel.findById(chatId);
-    let chunks = await Doc.findById(chat.documentId).select('Chunks -_id');
-    chunks = chunks.Chunks;
+
+    let theDocument = await Doc.findById(chat.documentId);
+
+    console.log(theDocument);
+
     const questionEmb = await getEmbeddings(query);
     const similarityResults = [];
 
-    chunks.forEach((chunk) => {
+    theDocument.Files[0].Chunks.forEach((chunk) => {
         const similarity = cosineSimilarity(questionEmb, chunk.embeddings);
         similarityResults.push({ chunk, similarity });
     });
@@ -35,24 +38,27 @@ exports.handler = catchAsync(async (req, res, next) => {
     let topThree = similarityResults.slice(0, 3).map((result) => result.chunk.rawText);
 
     const languageResponse = 'English';
-    const promptStart = `    You are a chatbot for extracted data from documents.
-                                 Answer the question based only 
+    const promptStart = `    You are a chatbot answring about extracted data from documents.
+                                 Answer the question based ONLY 
                                 on the context below in details with ${languageResponse}:\n\n
-                                and dont use any other information\n here is the top 3 most relevant context: \n\n
+                                and dont use any other information\n here is the top 3 most relevant context  : \n\n
                             `;
 
-    const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
-
-    const prompt = `${promptStart} ${topThree.join('\n')} ${promptEnd}`;
     let chatHistory = chat.messages.map((message) => {
         return { role: message.role, content: message.content };
     });
-    let response = await getCompletion(req, res, prompt);
+    const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
 
-    // response = response.choices[0].message;
-    // if (!response) {
-    //     return res.status(400).json({ message: 'error' });
-    // }
+    const prompt = `${promptStart} and here is the context of the previous meassages also :  ${topThree.join(
+        '\n'
+    )} ${promptEnd}`;
+
+    let response = await getCompletion(chatHistory);
+
+    response = response.choices[0].message;
+    if (!response) {
+        return res.status(400).json({ message: 'error' });
+    }
 
     //Push the query and response to the chatModel
     chat.messages.push({ role: 'user', content: query });

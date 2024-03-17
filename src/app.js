@@ -69,6 +69,7 @@ app.use('/user', userRoutes);
 app.use('/chat', chatRoutes);
 app.use('/extractions', extractionRoutes);
 app.use('/feedback', feedbackRoutes);
+app.use('/starMesaage', chatRoutes);
 
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {
