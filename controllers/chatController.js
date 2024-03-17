@@ -69,96 +69,57 @@ exports.startMessage = catchAsync(async (req, res, next) => {
     const { userId } = req.user;
     const { chatId, messageId } = req.body;
 
-    // chat message model :
-
-    // {
-    //     chatName: {
-    //         type: String,
-    //         required: true,
-    //         default: 'New Chat',
-    //     },
-
-    //     documentId: {
-    //         type: mongoose.Schema.Types.ObjectId,
-    //         ref: 'document',
-    //         required: true,
-    //     },
-    //     messages: [
-    //         {
-    //             role: { type: String, enum: ['user', 'assistant'], default: 'user' },
-    //             content: String,
-    //             isStared: { type: Boolean, default: false },
-    //         },
-    //     ],
-    // },
-    // {
-    //     timestamps: true,
-
-    // }
-
-    
+   
     const user = await User.findById(userId);
     if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Find the chat
-    const chat = await Chat.findById(chatId);
-    if (!chat) {
-        return res.status(404).json({ success: false, message: 'Chat not found' });
-    }
-
-    const message = chat.messages.find((msg) => msg._id == messageId); // messages is an array of objects with _id property
-    if (!message) {
-        return res.status(404).json({ success: false, message: 'Message not found in the chat' });
-    }
-
-    // Check if the message is already starred
-    if (message.isStared) {
-        return res.status(400).json({ success: false, message: 'Message is already starred' });
-    }
-
-    // Update the message to mark it as starred
-    message.isStared = true;
-
-    // Save the changes to the chat
-    await chat.save();
-
-    res.status(200).json({ success: true, message: 'Message starred successfully' });
-});
-
-exports.unstartMessage = catchAsync(async (req, res, next) => {
-    const { userId } = req.user; // Assuming req.user contains user information
-    const { chatId, messageId } = req.body;
-
-    // Find the user
-    const user = await User.findById(userId);
-    if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
-    }
-
-    // Find the chat
+    // Find the chat and check if it exists
     const chat = await Chat.findById(chatId);
     if (!chat) {
         return res.status(404).json({ success: false, message: 'Chat not found' });
     }
 
     // Find the message in the chat
-    const message = chat.messages.find((msg) => msg._id == messageId); // Assuming messages is an array of objects with _id property
+    const message = chat.messages.find((msg) => msg._id.toString() === messageId);
     if (!message) {
         return res.status(404).json({ success: false, message: 'Message not found in the chat' });
     }
 
-    // Check if the message is already un-starred
-    if (!message.isStared) {
-        return res.status(400).json({ success: false, message: 'Message is not starred' });
+    // Add message id to the user's starMessages array
+    user.starMessages.push({ messageId, chatName: chat.chatName });
+
+    await user.save();
+
+    res.status(200).json({ success: true, message: 'Message starred successfully' });
+});
+
+exports.unstartMessage = catchAsync(async (req, res, next) => {
+    const { userId } = req.user;
+    const { chatId, messageId } = req.body;
+
+   
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
     }
 
-    // Update the message to mark it as un-starred
-    message.isStared = false;
+    // Find the chat and check if it exists
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+        return res.status(404).json({ success: false, message: 'Chat not found' });
+    }
 
-    // Save the changes to the chat
-    await chat.save();
+    // Find the message in the chat
+    const message = chat.messages.find((msg) => msg._id.toString() === messageId);
+    if (!message) {
+        return res.status(404).json({ success: false, message: 'Message not found in the chat' });
+    }
+
+    user.starMessages = user.starMessages.filter((starredMsg) => starredMsg.messageId.toString() !== messageId);
+
+    await user.save();
 
     res.status(200).json({ success: true, message: 'Message un-starred successfully' });
 });

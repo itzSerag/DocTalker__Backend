@@ -59,7 +59,7 @@ const userSchema = new mongoose.Schema(
         starMessages: [
             {
                 type: mongoose.Schema.Types.ObjectId,
-                ref: 'Chat',
+                chatName: String,
             },
         ],
 
