@@ -1,9 +1,9 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/extractionController');
+const controller = require('../controllers/extractionsController');
+const { auth } = require('../middlewares/auth');
 
 // extract a text from a webpage
-router.post('/extract-webpage', controller.extractWebpage);
-router.post('/extract-youtube', controller.extractYoutube);
+router.post('/extract-content', auth, controller.extractContent);
 
 module.exports = router;

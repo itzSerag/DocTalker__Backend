@@ -20,6 +20,8 @@ exports.scrapeWebpage = async (url) =>{
 
         // Minify the text
         text = minify(text);
+
+        
         return text;
     } catch (error) {
         console.error('Error fetching webpage:', error);

@@ -24,7 +24,7 @@ const s3 = new S3Client({
     },
 });
 
-exports.uploadFile = async (fileKey, fileBody, fileType, folderName = '') => {
+exports.uploadFile = async (fileKey = '', fileBody = '', fileType = '', folderName = '') => {
     // by that ,, making the folder optional with defualt value of empty string
 
     const upload = new Upload({

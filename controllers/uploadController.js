@@ -6,8 +6,6 @@ const chatModel = require('../models/Chat');
 const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const Mongoose = require('mongoose');
-const User = require('../models/User');
-
 
 exports.fileUpload = catchAsync(async (req, res, next) => {
     let session;
