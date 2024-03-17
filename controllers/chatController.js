@@ -69,7 +69,6 @@ exports.startMessage = catchAsync(async (req, res, next) => {
     const { userId } = req.user;
     const { chatId, messageId } = req.body;
 
-   
     const user = await User.findById(userId);
     if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
@@ -99,7 +98,6 @@ exports.unstartMessage = catchAsync(async (req, res, next) => {
     const { userId } = req.user;
     const { chatId, messageId } = req.body;
 
-   
     const user = await User.findById(userId);
     if (!user) {
         return res.status(404).json({ success: false, message: 'User not found' });
@@ -117,9 +115,23 @@ exports.unstartMessage = catchAsync(async (req, res, next) => {
         return res.status(404).json({ success: false, message: 'Message not found in the chat' });
     }
 
-    user.starMessages = user.starMessages.filter((starredMsg) => starredMsg.messageId.toString() !== messageId);
+    // pull that message from the user's starMessages array
+    user.starMessages = user.starMessages.filter((msg) => msg.messageId !== messageId);
 
     await user.save();
 
     res.status(200).json({ success: true, message: 'Message un-starred successfully' });
+});
+
+exports.getStarMessages = catchAsync(async (req, res, next) => {
+    const { userId } = req.user;
+
+    const user = await User.findById(userId);
+    if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const starMessages = user.starMessages;
+
+    res.status(200).json({ success: true, data: starMessages });
 });

@@ -4,14 +4,11 @@ const AppError = require('../utils/appError');
 const catchAsync = require('../utils/catchAsync');
 const fs = require('fs');
 const { uploadFile } = require('../services/aws');
-const User = require('../models/User');
 const Document = require('../models/Document');
-const { getEmbeddings } = require('../services/huggingface');
 const chatModel = require('../models/Chat');
 const slugify = require('slugify');
-const { log } = require('console');
-const util = require('util');
-const readFileAsync = util.promisify(fs.readFile);
+
+
 
 const makeTextFile = (text, fileName) => {
     const filePath = `./temp/${fileName + '_'}${Date.now()}.txt`;
