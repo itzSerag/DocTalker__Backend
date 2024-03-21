@@ -24,7 +24,7 @@ exports.signup = catchAsync(async (req, res) => {
     });
 
     await user.save().then(() => {
-        res.status(200).json({ ...(user._doc - password), token: generateToken({ _id: user._id }) });
+        res.status(200).json({ ...user._doc, token: generateToken({ _id: user._id }) });
     });
 
     // TODO : MAKE OTP WORK

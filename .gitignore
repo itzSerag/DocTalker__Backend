@@ -13,8 +13,7 @@ public/
 package-lock.json
 node_modules/
 
-# prettier extention
-.prettierrc
+
 
 
 # Diagnostic reports (https://nodejs.org/api/report.html)

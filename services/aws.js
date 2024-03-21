@@ -2,19 +2,10 @@ const { S3Client, DeleteObjectCommand, ListObjectsCommand, PutObjectCommand } = 
 const { Upload } = require('@aws-sdk/lib-storage');
 
 /// NOTE THE ALLOWED OPERATIONS FOR THE S3 CLIENT IS DELETE AND UPLOAD ONLY
-/// FILE KEY IS THE NAME OF THE FILE -- key is the name of the file in the bucket -- حنيكه
+/// FILE KEY IS THE NAME OF THE FILE -- key is the name of the file in the bucket -- 
 
 // create createFolder function
-// HELPER FUNCTIONS
-const createFolder = async (Bucket, Key) => {
-    const command = new PutObjectCommand({
-        Bucket,
-        Key,
-        // it has no body -- > folder
-    });
-    return s3.send(command);
-};
-
+// HELPER FUNCTION
 // AWS config
 const s3 = new S3Client({
     region: process.env.AWS_BUCKET_REGION,
@@ -23,6 +14,8 @@ const s3 = new S3Client({
         secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     },
 });
+
+
 
 exports.uploadFile = async (fileKey = '', fileBody = '', fileType = '', folderName = '') => {
     // by that ,, making the folder optional with defualt value of empty string
@@ -61,7 +54,7 @@ exports.uploadFolder = async (files, folderName) => {
     folderName = folderName + '/';
     let dataLocation = [];
     // 1. create a folder in the bucket
-    await createFolder(process.env.AWS_BUCKET_NAME, folderName);
+    // await createFolder(process.env.AWS_BUCKET_NAME, folderName);
     // 2. upload the files to the folder
     for (const file of files) {
         dataLocation.push(await module.exports.uploadFile(file.originalname, file.buffer, file.mimetype, folderName));

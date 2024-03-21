@@ -9,7 +9,6 @@ const chatModel = require('../models/Chat');
 const slugify = require('slugify');
 
 
-
 const makeTextFile = (text, fileName) => {
     const filePath = `./temp/${fileName + '_'}${Date.now()}.txt`;
     fs.writeFileSync(filePath, text, 'utf-8');
@@ -21,31 +20,19 @@ const makeTextFile = (text, fileName) => {
     };
 };
 
-const uploadTxtFileToS3 = (fileInfoObj) => {
-    return new Promise(async (resolve, reject) => {
-        const fileName = fileInfoObj.fileName;
-        const filePath = fileInfoObj.filePath;
+const uploadTxtFileToS3 = async (fileInfoObj) => {
+    // return new Promise(async (resolve, reject) => {
+    const fileName = fileInfoObj.fileName;
+    const filePath = fileInfoObj.filePath;
 
-        console.log('fileName ::: ' + fileName);
+    const file = fs.readFileSync(filePath);
 
-        try {
-            // Read file asynchronously
-            const file = await readFileAsync(filePath);
+    // Upload file to S3
+    const AWSUrl = await uploadFile(fileName, file, 'text/plain');
 
-            // Upload file to S3
-            const AWSUrl = await uploadFile(fileName, file, 'text/plain');
-
-            console.log('AWS URL ::: ' + AWSUrl);
-
-            fs.unlinkSync(filePath);
-
-            resolve(AWSUrl);
-        } catch (err) {
-            // Handle errors
-            console.error('Error:', err);
-            reject(err);
-        }
-    });
+    // delete the file from the server after its uploaded to S3
+    fs.unlinkSync(filePath);
+    return AWSUrl;
 };
 
 exports.extractContent = catchAsync(async (req, res, next) => {
@@ -106,6 +93,7 @@ exports.extractContent = catchAsync(async (req, res, next) => {
     });
 });
 
+// check if the URL is a YouTube URL or Webpage URL
 function isYoutubeURL(url) {
     // Check if the URL contains 'youtube.com'
     return url.includes('youtube.com');
