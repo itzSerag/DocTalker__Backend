@@ -8,6 +8,8 @@ const { generateOTP } = require('../utils/generateOTP');
 const { validateEmail } = require('../utils/emailVaildation');
 const catchAsync = require('../utils/catchAsync');
 
+const { createS3Folder } = require('../services/aws');
+
 exports.signup = catchAsync(async (req, res) => {
     const { firstName, lastName, email, password } = req.body;
 
@@ -23,8 +25,24 @@ exports.signup = catchAsync(async (req, res) => {
         password: hashedPassword,
     });
 
+    // Create a folder for the user in the S3 bucket
+    await createS3Folder(user._id.toString()).catch((error) => {
+        console.error('Signup -- Creating S3 Folder -- Error:', error);
+
+        res.status(500).json({
+            status: 'fail',
+            error: 'Failed to create a folder for the user.',
+        });
+    });
+
     await user.save().then(() => {
-        res.status(200).json({ ...user._doc, token: generateToken({ _id: user._id }) });
+        res.status(200).json({
+            status: 'success',
+            data: {
+                ...user._doc,
+                token: generateToken({ _id: user._id }),
+            },
+        });
     });
 
     // TODO : MAKE OTP WORK
@@ -76,6 +94,8 @@ exports.login = catchAsync(async (req, res) => {
     // Dont send the password to the client
     res.status(200).json({ ...user._doc, token: generateToken({ _id: user._id }) });
 });
+
+
 
 exports.resendOtp = async (req, res) => {
     try {

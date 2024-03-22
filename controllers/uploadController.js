@@ -9,6 +9,7 @@ const Mongoose = require('mongoose');
 
 exports.fileUpload = catchAsync(async (req, res, next) => {
     let session;
+
     try {
         session = await Mongoose.startSession();
         session.startTransaction(session.defaultTransactionOptions);
@@ -22,8 +23,9 @@ exports.fileUpload = catchAsync(async (req, res, next) => {
 
         await connectDB();
 
-        const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype);
+        const filerWithUserId = currUser._id.toString() + '/' 
 
+        const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype, filerWithUserId);
         const myFile = new Doc({
             FileName: file.originalname,
             Files: [
@@ -80,10 +82,11 @@ exports.folderUpload = catchAsync(async (req, res, next) => {
         await connectDB();
 
         if (!folderName) {
-            folderName = 'default5569';
+            folderName = 'default5569/';
         }
+        const uploadFolderNameWithUserId = currUser._id.toString() + '/' + folderName;
 
-        const dataLocation = await uploadFolder(files, folderName);
+        const dataLocation = await uploadFolder(files, uploadFolderNameWithUserId);
 
         const folder = new Doc({
             FileName: folderName,
