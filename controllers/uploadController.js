@@ -14,16 +14,12 @@ exports.fileUpload = catchAsync(async (req, res, next) => {
         session = await Mongoose.startSession();
         session.startTransaction(session.defaultTransactionOptions);
 
-        if (req.method !== 'POST') {
-            throw new AppError(`Method ${req.method} not supported`, 400);
-        }
-
         const file = req.file;
         const currUser = req.user;
 
         await connectDB();
 
-        const filerWithUserId = currUser._id.toString() + '/' 
+        const filerWithUserId = currUser._id.toString() + '/';
 
         const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype, filerWithUserId);
         const myFile = new Doc({
@@ -70,10 +66,6 @@ exports.folderUpload = catchAsync(async (req, res, next) => {
     try {
         session = await Mongoose.startSession();
         session.startTransaction(session.defaultTransactionOptions);
-
-        if (req.method !== 'POST') {
-            throw new AppError(`Method ${req.method} not supported`, 400);
-        }
 
         let { folderName } = req.body;
         const files = req.files;

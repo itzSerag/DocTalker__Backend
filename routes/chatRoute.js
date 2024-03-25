@@ -1,6 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { getAllChats, getChat, deleteChat, updateChat, startMessage } = require('../controllers/chatController');
+const {
+    getAllChats,
+    getChat,
+    deleteChat,
+    updateChat,
+    startMessage,
+    unstartMessage,
+} = require('../controllers/chatController');
 
 const { auth } = require('../middlewares/auth');
 
@@ -14,5 +21,6 @@ router.delete('/:id', deleteChat);
 router.put('/:id', updateChat);
 
 router.post('/star', startMessage);
+router.post('/unStar', unstartMessage);
 
 module.exports = router;

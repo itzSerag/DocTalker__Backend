@@ -28,6 +28,8 @@ exports.handler = async (req, res) => {
         const theDocument = await Doc.findById(file.documentId);
 
         const similarityResults = [];
+        const queryEmb = await getEmbeddings(query);
+
         for (let i = 0; i < theDocument.Files[0].Chunks.length; i++) {
             const chunk = theDocument.Files[0].Chunks[i];
             const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
@@ -37,6 +39,8 @@ exports.handler = async (req, res) => {
         similarityResults.sort((a, b) => b.similarity - a.similarity);
         let contextsTopSimilarityChunks = similarityResults.slice(0, 3).map((result) => result.chunk);
         contextsTopSimilarityChunks = contextsTopSimilarityChunks.map((chunk) => chunk.rawText);
+
+        console.log(contextsTopSimilarityChunks);
 
         // Build the prompt
         const languageResponse = 'English'; // Default output language is English
@@ -48,6 +52,8 @@ exports.handler = async (req, res) => {
 
         // Get completion from OpenAI
         const response = await getCompletion(chathistory);
+
+        console.log(response);
 
         // Update chatmodel
         await chatmodel.findOneAndUpdate(

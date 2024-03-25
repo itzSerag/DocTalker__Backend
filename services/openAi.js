@@ -14,5 +14,7 @@ exports.getCompletion = async (prompt) => {
         messages: prompt,
     });
 
-    return completion;
+    console.log(completion.choices[0].message);
+
+    return completion.choices[0].message.content;
 };

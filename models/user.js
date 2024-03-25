@@ -58,8 +58,8 @@ const userSchema = new mongoose.Schema(
         // array of chat ids that the user has starred
         starMessages: [
             {
-                type: mongoose.Schema.Types.ObjectId,
-                chatName: String,
+                messageID: mongoose.Schema.Types.ObjectId,
+                chatID: mongoose.Schema.Types.ObjectId,
             },
         ],
 
