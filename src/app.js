@@ -60,6 +60,8 @@ const userRoutes = require('../routes/userRoute');
 const chatRoutes = require('../routes/chatRoute');
 const extractionRoutes = require('../routes/extractions');
 const feedbackRoutes = require('../routes/feedbackRoute');
+// SUPER PREMIUM ROUTES
+const handwrittenRoutes = require('../routes/handwrittenRoute');
 
 // Mount routes
 app.use('/payment', paymentRoutes);
@@ -70,6 +72,7 @@ app.use('/chat', chatRoutes);
 app.use('/extractions', extractionRoutes);
 app.use('/feedback', feedbackRoutes);
 app.use('/starMesaage', chatRoutes);
+app.use('/handwritten', handwrittenRoutes);
 
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {

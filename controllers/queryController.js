@@ -1,4 +1,4 @@
-const { getCompletion } = require('../services/openAi');
+const { getCompletion } = require('../utils/getCompletion');
 const { getEmbeddings } = require('../services/huggingface');
 const { connectDB } = require('../config/database');
 const Doc = require('../models/Document'); // Importing the Document model
@@ -9,24 +9,27 @@ let chathistory = [];
 
 exports.handler = async (req, res) => {
     try {
-        const { query, id } = req.body;
+        const { query, chatId, modelType } = req.body;
 
         // Connect to MongoDB
         await connectDB();
 
         // Update chat history
-        await chatmodel.findOneAndUpdate({ _id: id }, { $push: { messages: { role: 'user', content: query } } });
-        chathistory = await chatmodel.findById(id).find({});
+        await chatmodel.findOneAndUpdate({ _id: chatId }, { $push: { messages: { role: 'user', content: query } } });
+        chathistory = await chatmodel.findById(chatId).find({});
 
+        // creating the chat history
         chathistory = chathistory[0].messages.map((chat) => ({
             role: chat.role,
             content: chat.content,
+            modelType,
         }));
 
-        // Query the document by ID
-        const file = await chatmodel.findById(id);
+        // find the document by ID
+        const file = await chatmodel.findById(chatId);
         const theDocument = await Doc.findById(file.documentId);
 
+        // get the similarity between the query and the chunks
         const similarityResults = [];
         const queryEmb = await getEmbeddings(query);
 
@@ -36,28 +39,30 @@ exports.handler = async (req, res) => {
             similarityResults.push({ chunk, similarity });
         }
 
+        // choosing top three chunks with the highest similarity
         similarityResults.sort((a, b) => b.similarity - a.similarity);
         let contextsTopSimilarityChunks = similarityResults.slice(0, 3).map((result) => result.chunk);
         contextsTopSimilarityChunks = contextsTopSimilarityChunks.map((chunk) => chunk.rawText);
 
-        console.log(contextsTopSimilarityChunks);
-
         // Build the prompt
         const languageResponse = 'English'; // Default output language is English
-        const promptStart = `Answer the question based on the context below with ${languageResponse}:\n\n`;
+        const promptStart = `Answer the question based on the context below only and answer in details
+                             with ${languageResponse}:\n\n`;
         const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
         const prompt = `${promptStart} ${contextsTopSimilarityChunks} ${promptEnd}`;
 
         chathistory.push({ role: 'user', content: prompt });
 
-        // Get completion from OpenAI
-        const response = await getCompletion(chathistory);
+        // Get completion from the model
+
+        // get the response from the model based on the model specified
+        const response = await getCompletion(prompt, modelType);
 
         console.log(response);
 
         // Update chatmodel
         await chatmodel.findOneAndUpdate(
-            { _id: id },
+            { _id: chatId },
             { $push: { messages: { role: 'assistant', content: response } } }
         );
 

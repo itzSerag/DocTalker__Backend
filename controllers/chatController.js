@@ -101,10 +101,8 @@ exports.startMessage = catchAsync(async (req, res, next) => {
     // Add message id to the user's starMessages array
     user.starMessages.push({ messageID: messageIdObj, chatID: chat._id });
 
-    // Save the user
     await user.save();
 
-    // Respond with success message
     res.status(200).json({ success: true, message: 'Message starred successfully' });
 });
 

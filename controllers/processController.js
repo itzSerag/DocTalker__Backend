@@ -18,6 +18,8 @@ exports.handler = catchAsync(async (req, res, next) => {
     const { chatId } = req.body;
     const currentUser = req.user;
 
+   
+
     await connectDB();
 
     try {

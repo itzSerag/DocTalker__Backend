@@ -6,7 +6,7 @@ const openai = new OpenAI({
 
 const OPEN_AI_COMPLETION_MODEL = 'gpt-3.5-turbo';
 
-exports.getCompletion = async (prompt) => {
+exports.getCompletionfromOpenAI = async (prompt) => {
     const completion = await openai.chat.completions.create({
         model: OPEN_AI_COMPLETION_MODEL,
         temperature: 0.5,
