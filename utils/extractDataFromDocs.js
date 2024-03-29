@@ -4,6 +4,7 @@ const minify = require('string-minify');
 const mammoth = require('mammoth');
 const { log } = require('console');
 const fetch = require('node-fetch');
+const { textAndImage } = require('../services/gemini');
 
 exports.convertDocToChunks = async (FileName, FileUrl) => {
     // GET THEM FROM DB
@@ -18,7 +19,38 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
     let documentContent;
     const myFileUrlString = FileName;
 
-    if (myFileUrlString.endsWith('.pdf')) {
+    if (FileName.endsWith('.png' || '.jpg' || '.jpeg' || '.gif' || '.svg' || '.bmp' || '.tiff' || '.webp')) {
+        // work with the array of url
+        // extract the data from the gemini text by passing the array of url
+        // return the text in the image
+        const fileUrl = [];
+        fileUrl.push(FileUrl);
+        let text = 'This is a start of page';
+
+        const generatedContent = await textAndImage(fileUrl);
+
+        log('generatedContent ::: ' + generatedContent);
+        text += generatedContent.result;
+
+        text += 'This is the end of page';
+
+        console.log('text ::: ' + text);
+
+        documentContent = text;
+    }
+
+    else if (FileUrl.startsWith('handwritten')) {
+        // extract the data from the gemini text by passing the array of url
+        // return the text in the image
+
+        const text = 'This is a start of page';
+        text += await textAndImage(FileUrl);
+        text += 'This is the end of page';
+
+        documentContent = text;
+    }
+
+    else if (myFileUrlString.endsWith('.pdf')) {
         // For PDF files
         const pdfData = await fetch(FileUrl);
         const buffer = await pdfData.arrayBuffer();
@@ -40,14 +72,8 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         // For plain text files
         const txtData = await fetch(FileUrl);
         documentContent = await txtData.text();
-    } else if (FileUrl.endsWith('.png' || '.jpg' || '.jpeg' || '.gif' || '.svg' || '.bmp' || '.tiff' || '.webp')) {
-        // TODO : ADD MORE FILE TYPES
-        // extract using google lens and put in in txt file
-        return NULL;
-    } else {
-        // Unsupported file type
-
-        // TODO : ADD A FUNCTION TO EXTRACT TEXT FROM WEBSITES
+    } else{
+        // For other file types
         return NULL;
     }
 

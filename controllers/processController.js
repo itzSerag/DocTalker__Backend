@@ -18,8 +18,6 @@ exports.handler = catchAsync(async (req, res, next) => {
     const { chatId } = req.body;
     const currentUser = req.user;
 
-   
-
     await connectDB();
 
     try {
@@ -27,7 +25,7 @@ exports.handler = catchAsync(async (req, res, next) => {
         const chat = await ChatModel.findById(chatId);
 
         // Find the document associated with the chat
-        const document = await DocumentModel.findById(chat.documentId); // could be a folder or a file
+        const document = await DocumentModel.findById(chat.documentId);
 
         if (!document) {
             return next(new AppError('Document ID not found', 404));
@@ -40,6 +38,8 @@ exports.handler = catchAsync(async (req, res, next) => {
 
         // Loop through each file in the document
         for (const file of document.Files) {
+            console.log('Processing file:', file.FileName, file.FileURL);
+
             const chunks = await convertDocToChunks(file.FileName, file.FileURL);
 
             const vectors = [];

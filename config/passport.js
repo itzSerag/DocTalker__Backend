@@ -1,6 +1,6 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth2');
-const User = require('../models/user');
+const User = require('../models/User');
 
 // SHKIB WILL TELL US
 

@@ -4,6 +4,7 @@
 
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { HarmBlockThreshold, HarmCategory } = require('@google/generative-ai');
+const { processImages } = require('../utils/processImages');
 
 // We can put these on a separate file but its fine for now
 
@@ -20,18 +21,18 @@ const config = {
         safetySettings: [
             {
                 category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
-                threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                threshold: HarmBlockThreshold.BLOCK_NONE,
             },
             {
                 category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
-                threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
+                threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
             },
             {
                 category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
                 threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
             },
             {
-                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                category: HarmCategory.HARM_CATEGORY_HARASSMENT, 
                 threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
             },
         ],
@@ -59,7 +60,7 @@ exports.textOnly = async (prompt) => {
     }
 };
 
-exports.textAndImage = async (prompt, images) => {
+exports.textAndImage = async (images) => {
     const model = genAI.getGenerativeModel({
         model: config.gemini.textAndImageModel,
         safetySettings: config.gemini.safetySettings,
@@ -74,7 +75,7 @@ exports.textAndImage = async (prompt, images) => {
         const result = await model.generateContent([(prompt = ''), ...imageParts]);
         const chatResponse = result?.response?.text();
 
-        return { result: chatResponse, image_Parts: imageParts[0] };
+        return chatResponse; // String
     } catch (error) {
         console.error('textAndImage | error', error);
         return { Error: 'Uh oh! Caught error while fetching AI response' };

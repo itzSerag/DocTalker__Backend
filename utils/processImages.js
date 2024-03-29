@@ -1,7 +1,7 @@
 const axios = require('axios');
 const mime = require('mime-types');
 
-exports.urlToGenerativePart = async (url) => {
+async function urlToGenerativePart(url) {
     try {
         // Make a GET request to the image URL
         const response = await axios.get(url, { responseType: 'arraybuffer' });
@@ -28,10 +28,11 @@ exports.urlToGenerativePart = async (url) => {
         console.error('processImages | Error fetching image from URL:', error.message);
         return { Error: 'Error fetching image from URL' };
     }
-};
+}
 
 exports.processImages = async (images) => {
     try {
+        console.log('images urls ---- ' + images);
         const imageParts = await Promise.all(images.map(async (img) => await urlToGenerativePart(img)));
 
         console.log('imageParts---- ' + imageParts);

@@ -76,16 +76,19 @@ exports.folderUpload = catchAsync(async (req, res, next) => {
         if (!folderName) {
             folderName = 'default5569/';
         }
-        const uploadFolderNameWithUserId = currUser._id.toString() + '/' + folderName;
+        const uploadFolderNameWithUserId = currUser._id.toString();
 
-        const dataLocation = await uploadFolder(files, uploadFolderNameWithUserId);
+        const ArrayOfdataLocation = await uploadFolder(files, uploadFolderNameWithUserId, folderName);
 
+        console.log('dataLocationsFOlder : ' + ArrayOfdataLocation);
+
+        
         const folder = new Doc({
             FileName: folderName,
             Files: files.map((file) => ({
                 FileName: file.originalname,
                 FileKey: file.originalname,
-                FileURL: dataLocation[files.indexOf(file)],
+                FileURL: ArrayOfdataLocation[files.indexOf(file)],
             })),
         });
 

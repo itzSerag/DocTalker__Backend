@@ -31,6 +31,11 @@ exports.createS3Folder = async (folderName) => {
 
 exports.uploadFile = async (fileKey = '', fileBody = '', fileType = '', folderName = '') => {
     // by that ,, making the folder optional with defualt value of empty string
+    // already handled with userID in uploadController
+
+    if (folderName !== '' && !folderName.endsWith('/')) {
+        folderName = folderName + '/';
+    }
 
     const upload = new Upload({
         client: s3,
@@ -62,8 +67,8 @@ exports.listAllObjects = async (Bucket, Prefix) => {
     return s3.send(command);
 };
 
-exports.uploadFolder = async (files, folderName) => {
-    folderName = folderName + '/';
+exports.uploadFolder = async (files, userID, folderName) => {
+    folderName = userID + '/' + folderName + '/';
     let dataLocation = [];
 
     // upload the files to the folder
