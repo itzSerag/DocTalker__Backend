@@ -1,8 +1,10 @@
 const express = require('express');
-const session = require('express-session');
-const passport = require('passport');
 require('dotenv').config();
-
+const session = require('express-session');
+const helmet = require('helmet');
+const expressRateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const passport = require('passport');
 const morgan = require('morgan');
 const cors = require('cors');
 const golbalErrorHandler = require('../controllers/errorController');
@@ -17,6 +19,9 @@ if (process.env.NODE_ENV === 'development') {
 
 const PORT = process.env.PORT || 5000;
 
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
 // CORS middleware
 app.use(
     cors({
@@ -26,8 +31,16 @@ app.use(
     })
 );
 
+// Rate limiting middleware
+const limiter = expressRateLimit({
+    max: 100,
+    windowMs: 60 * 60 * 1000,
+    message: 'Too many requests from this IP, please try again after an hour',
+});
+
 // Middleware for JSON and URL-encoded data
-app.use(express.json());
+app.use(helmet());
+app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true }));
 
 // Session middleware
@@ -36,6 +49,10 @@ app.use(
         secret: process.env.SESSION_SECRET || 'secret',
         resave: false,
         saveUninitialized: false,
+        cookie: {
+            httpOnly: true,
+            secure: false, // set to true in production
+        },
     })
 );
 
@@ -43,14 +60,8 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Home auth
-app.get('/', (req, res) => {
-    try {
-        res.status(200).json({ status: 'success', message: 'Welcome to the home page' });
-    } catch (err) {
-        res.status(500).json({ status: 'error' });
-    }
-});
+// Middleware for rate limiting
+app.use('/api', limiter);
 
 // Routes
 const paymentRoutes = require('../routes/payment');
@@ -64,15 +75,15 @@ const feedbackRoutes = require('../routes/feedbackRoute');
 const handwrittenRoutes = require('../routes/handwrittenRoute');
 
 // Mount routes
-app.use('/payment', paymentRoutes);
-app.use('/upload', uploadRoute);
-app.use('/query', queryRoute);
-app.use('/user', userRoutes);
-app.use('/chat', chatRoutes);
-app.use('/extractions', extractionRoutes);
-app.use('/feedback', feedbackRoutes);
-app.use('/starMesaage', chatRoutes);
-app.use('/handwritten', handwrittenRoutes);
+app.use('api/payment', paymentRoutes);
+app.use('api/upload', uploadRoute);
+app.use('api/query', queryRoute);
+app.use('api/user', userRoutes);
+app.use('api/chat', chatRoutes);
+app.use('api/extractions', extractionRoutes);
+app.use('api/feedback', feedbackRoutes);
+app.use('api/starMesaage', chatRoutes);
+app.use('api/handwritten', handwrittenRoutes);
 
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {
