@@ -40,7 +40,7 @@ const limiter = expressRateLimit({
 
 // Middleware for JSON and URL-encoded data
 app.use(helmet());
-app.use(express.json({ limit: '10kb' }));
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Session middleware
@@ -71,19 +71,19 @@ const userRoutes = require('../routes/userRoute');
 const chatRoutes = require('../routes/chatRoute');
 const extractionRoutes = require('../routes/extractions');
 const feedbackRoutes = require('../routes/feedbackRoute');
-// SUPER PREMIUM ROUTES
 const handwrittenRoutes = require('../routes/handwrittenRoute');
 
 // Mount routes
-app.use('api/payment', paymentRoutes);
-app.use('api/upload', uploadRoute);
-app.use('api/query', queryRoute);
-app.use('api/user', userRoutes);
-app.use('api/chat', chatRoutes);
-app.use('api/extractions', extractionRoutes);
-app.use('api/feedback', feedbackRoutes);
-app.use('api/starMesaage', chatRoutes);
-app.use('api/handwritten', handwrittenRoutes);
+app.use('/api/payment', paymentRoutes);
+app.use('/api/upload', uploadRoute);
+app.use('/api/query', queryRoute);
+app.use('/api/user', userRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/extractions', extractionRoutes);
+app.use('/api/feedback', feedbackRoutes);
+app.use('/api/starMesaage', chatRoutes);
+// SUPER PREMIUM ROUTES
+app.use('/api/handwritten', handwrittenRoutes);
 
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {

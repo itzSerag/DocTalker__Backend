@@ -25,32 +25,27 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         // return the text in the image
         const fileUrl = [];
         fileUrl.push(FileUrl);
-        let text = 'This is a start of page';
+        let text = '\nThis is a start of page\n';
 
         const generatedContent = await textAndImage(fileUrl);
 
         log('generatedContent ::: ' + generatedContent);
-        text += generatedContent.result;
+        text += generatedContent;
 
-        text += 'This is the end of page';
-
-        console.log('text ::: ' + text);
+        text += '\nThis is the end of page';
 
         documentContent = text;
-    }
-
-    else if (FileUrl.startsWith('handwritten')) {
+        console.log('final text :::::::::::: \n' + documentContent);
+    } else if (FileUrl.startsWith('handwritten')) {
         // extract the data from the gemini text by passing the array of url
         // return the text in the image
 
         const text = 'This is a start of page';
-        text += await textAndImage(FileUrl);
+        text += (await textAndImage(FileUrl)).toString;
         text += 'This is the end of page';
 
         documentContent = text;
-    }
-
-    else if (myFileUrlString.endsWith('.pdf')) {
+    } else if (myFileUrlString.endsWith('.pdf')) {
         // For PDF files
         const pdfData = await fetch(FileUrl);
         const buffer = await pdfData.arrayBuffer();
@@ -72,7 +67,7 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         // For plain text files
         const txtData = await fetch(FileUrl);
         documentContent = await txtData.text();
-    } else{
+    } else {
         // For other file types
         return NULL;
     }

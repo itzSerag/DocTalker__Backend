@@ -7,6 +7,8 @@ const chatmodel = require('../models/Chat');
 
 let chathistory = [];
 
+//  !!TODO : Implement the function to handle the user query seraches theoough the documentS..
+
 exports.handler = async (req, res) => {
     try {
         const { query, chatId, modelType } = req.body;

@@ -5,11 +5,12 @@ const Chat = require('../models/Chat');
 const mongoose = require('mongoose');
 
 exports.uploadHandwrittenPDF = async (req, res, next) => {
+    const session = await mongoose.startSession();
+
     try {
         // Validate incoming request payload
         const file = req.file;
         const currUser = req.user;
-        const session = await mongoose.startSession();
 
         if (!file || !file.buffer || !file.originalname || !file.mimetype) {
             return res.status(400).json({ error: 'Invalid file upload' });
