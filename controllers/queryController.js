@@ -31,19 +31,19 @@ exports.handler = async (req, res) => {
         const file = await chatmodel.findById(chatId);
         const theDocument = await Doc.findById(file.documentId);
 
-        // get the similarity between the query and the chunks
         const similarityResults = [];
         const queryEmb = await getEmbeddings(query);
 
-        for (let i = 0; i < theDocument.Files[0].Chunks.length; i++) {
-            const chunk = theDocument.Files[0].Chunks[i];
-            const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
-            similarityResults.push({ chunk, similarity });
+        for (const file of theDocument.Files) {
+            for (const chunk of file.Chunks) {
+                const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
+                similarityResults.push({ chunk, similarity });
+            }
         }
 
         // choosing top three chunks with the highest similarity
         similarityResults.sort((a, b) => b.similarity - a.similarity);
-        let contextsTopSimilarityChunks = similarityResults.slice(0, 3).map((result) => result.chunk);
+        let contextsTopSimilarityChunks = similarityResults.slice(0, 5).map((result) => result.chunk);
         contextsTopSimilarityChunks = contextsTopSimilarityChunks.map((chunk) => chunk.rawText);
 
         // Build the prompt
@@ -69,7 +69,7 @@ exports.handler = async (req, res) => {
         );
 
         // Return the response
-        res.status(200).json({ response: response, topchunks: contextsTopSimilarityChunks });
+        res.status(200).json({ response: response, topchunks: contextsTopSimilarityChunks, similarityResults });
     } catch (error) {
         res.json({ error: error.message });
     }
