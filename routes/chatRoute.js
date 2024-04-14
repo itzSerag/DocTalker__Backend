@@ -21,6 +21,6 @@ router.delete('/:id', deleteChat);
 router.put('/:id', updateChat);
 
 router.post('/star', startMessage);
-router.post('/unStar', unstartMessage);
+router.post('/unstar', unstartMessage);
 
 module.exports = router;

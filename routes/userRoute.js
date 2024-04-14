@@ -28,13 +28,17 @@ router.get(
         failureRedirect: '/auth/failure',
     })
 );
-router.get('/auth/protected', isLoggedIn, (req, res) => {
-    res.send('success google authenticate');
-});
 
-router.get('/auth/failure', (req, res) => {
-    res.send('something wrong try again');
-});
+
+// router.get('/auth/protected', isLoggedIn, (req, res) => {
+//     res.send('success google authenticate');
+// });
+
+// router.get('/auth/failure', (req, res) => {
+//     res.send('something wrong try again');
+// });
+
+
 //TODO OTP AUTH
 router.post('/otp/verify', auth, verifyOtp);
 router.post('/otp/resend', auth, resendOtp);
