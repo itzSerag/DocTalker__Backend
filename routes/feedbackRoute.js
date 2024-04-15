@@ -5,6 +5,6 @@ const controller = require('../controllers/feedbackController');
 const { auth } = require('../middlewares/auth');
 
 // extract a text from a webpage
-router.post('/sendFeedbackMessage', auth, controller.feedbackController);
+router.post('/feedbackmessage', auth, controller.feedbackController);
 
 module.exports = router;

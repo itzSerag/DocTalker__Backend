@@ -81,7 +81,9 @@ app.use('/api/user', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/extractions', extractionRoutes);
 app.use('/api/feedback', feedbackRoutes);
-app.use('/api/starMesaage', chatRoutes);
+
+// app.use('/api/starMesaage', chatRoutes);
+
 // SUPER PREMIUM ROUTES
 app.use('/api/handwritten', handwrittenRoutes);
 

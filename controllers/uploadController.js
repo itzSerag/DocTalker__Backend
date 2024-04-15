@@ -61,6 +61,8 @@ exports.fileUpload = catchAsync(async (req, res, next) => {
     }
 });
 
+
+
 exports.folderUpload = catchAsync(async (req, res, next) => {
     let session;
     try {

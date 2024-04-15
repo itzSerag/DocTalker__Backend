@@ -41,7 +41,7 @@ exports.extractContent = catchAsync(async (req, res, next) => {
     const { url } = req.body;
     const currUser = req.user; // Assuming req.user contains the current user information
 
-    let text, fileName, fileInfo, filePath, dataLocation;
+    let text, fileName, fileInfo, dataLocation;
 
     if (isYoutubeURL(url)) {
         // If it's a YouTube URL, extract transcript
