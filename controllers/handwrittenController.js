@@ -1,11 +1,10 @@
 const { uploadFile } = require('../services/aws');
-const { generateImagesFromS3Pdf } = require('../utils/pdfToImages');
+const { generateImagesFromS3Doc } = require('../utils/pdfToImages');
 const Doc = require('../models/Document');
 const Chat = require('../models/Chat');
-const mongoose = require('mongoose');
+
 
 exports.uploadHandwrittenPDF = async (req, res, next) => {
-    const session = await mongoose.startSession();
 
     try {
         // Validate incoming request payload
@@ -25,7 +24,7 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
         const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype, filerWithUserId);
 
         // Generate images from the uploaded PDF
-        const ArrayImagesBody = await generateImagesFromS3Pdf(dataLocation);
+        const ArrayImagesBody = await generateImagesFromS3Doc(dataLocation);
 
         // Upload images to S3
         const ArrayImages = [];
@@ -35,8 +34,6 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
             const fileURL = await uploadFile(fileName, image, 'image/png', imageFolderWithinPdf);
             ArrayImages.push({ FileName: fileName, FileKey: fileKey, FileURL: fileURL });
         }
-
-        session.startTransaction();
 
         // Save document information to the database
         const folder = new Doc({
@@ -48,20 +45,20 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
             })),
         });
 
-        await folder.save({ session });
+        await folder.save();
 
         // Create a chat entry for the document
         const chat = new Chat({
             documentId: folder._id,
             chatName: folderName, // Assuming the chat name is the same as the document name
         });
-        await chat.save({ session });
+        await chat.save();
 
         // Update user upload count
         currUser.uploadRequest += ArrayImages.length;
-        await currUser.save({ session });
+        await currUser.save();
 
-        session.commitTransaction();
+    
 
         // Send success response
         res.status(200).json({
@@ -72,8 +69,6 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
     } catch (error) {
         console.error('Error uploading handwritten PDF:', error);
         res.status(500).json({ error: 'Internal server error' });
-    } finally {
-        session.endSession();
     }
 };
 

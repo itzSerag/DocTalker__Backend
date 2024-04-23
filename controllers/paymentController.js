@@ -1,52 +1,30 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const User = require('../models/User');
 
-// Create a payment intent
-exports.createPaymentIntent = async (req, res) => {
+exports.createCheckoutSession = async (req, res) => {
+    const { product } = req.body;
     try {
-        const amount = req.body.amount;
-        const currency = req.body.currency;
-        const userId = req.body.userId;
-        const user = await User.findById(userId);
-
-        if (!user) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-
-        const paymentIntent = await stripe.paymentIntents.create({
-            amount,
-            currency,
-            customer: user.stripeCustomerId,
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'US',
+                        product_data: {
+                            name: product.name,
+                        },
+                        unit_amount: product.price, // Assuming price is in paisa
+                    },
+                    quantity: product.quantity,
+                },
+            ],
+            mode: 'payment',
+            // success_url: 'http://localhost:3000/api/payment/success',
+            // cancel_url: 'http://localhost:3000/api/payment/cancel',
         });
-
-        res.json({ clientSecret: paymentIntent.client_secret });
+        res.json({ id: session.id });
     } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-};
-
-// Process a payment
-exports.processPayment = async (req, res) => {
-    const { paymentMethodId, paymentIntentId, userId } = req.body;
-
-    const user = await User.findById(userId);
-
-    if (!user) {
-        return res.status(404).json({ error: 'User not found' });
-    }
-
-    try {
-        await stripe.paymentMethods.attach(paymentMethodId, {
-            customer: user.stripeCustomerId,
-        });
-
-        const confirmedPaymentIntent = await stripe.paymentIntents.confirm(paymentIntentId);
-
-        // Handle successful payment logic here
-        // Update the user's subscription or order status, if needed
-
-        res.json({ message: 'Payment successful' });
-    } catch (error) {
-        res.status(500).json({ error: error.message });
+        console.error('Error creating checkout session:', error);
+        res.status(500).json({ error: 'Failed to create checkout session' });
     }
 };

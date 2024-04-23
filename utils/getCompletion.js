@@ -1,6 +1,6 @@
 const { getCompletionFromOpenAI } = require('../services/openAi');
-const { textAndImage } = require('../services/gemini');
-const { textOnly } = require('../services/gemini');
+// const { textAndImage } = require('../services/gemini');
+// const { textOnly } = require('../services/gemini');
 
 exports.getCompletion = async (prompt, modelType) => {
     if (modelType === 'openai') {

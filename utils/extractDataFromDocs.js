@@ -36,7 +36,6 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
 
         documentContent = text;
 
-        console.log('final text :::::::::::: \n' + documentContent);
     } else if (myFileUrlString.endsWith('.pdf')) {
         // For PDF files
         const pdfData = await fetch(FileUrl);
@@ -47,8 +46,6 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         pdfParser.parseBuffer(buffer);
         const pdfText = pdfParser.getRawTextContent();
         documentContent = pdfText;
-
-        log('pdfText ::: ' + documentContent);
 
         // TODO : ADD MORE FILE TYPES
     } else if (FileUrl.endsWith('.docx')) {
