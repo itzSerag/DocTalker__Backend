@@ -7,70 +7,62 @@ const chatmodel = require('../models/Chat');
 
 let chathistory = [];
 
-//  !!TODO : Implement the function to handle the user query seraches theoough the documentS..
-
 exports.handler = async (req, res) => {
     try {
+        
         const { query, chatId, modelType } = req.body;
 
-        // Connect to MongoDB
         await connectDB();
 
-        // Update chat history
+        // Update chat history and retrieve updated history
         await chatmodel.findOneAndUpdate({ _id: chatId }, { $push: { messages: { role: 'user', content: query } } });
-        chathistory = await chatmodel.findById(chatId).find({});
+        const updatedChat = await chatmodel.findById(chatId);
+        const chathistory = updatedChat.messages.map((chat) => ({ role: chat.role, content: chat.content, modelType }));
 
-        // creating the chat history
-        chathistory = chathistory[0].messages.map((chat) => ({
-            role: chat.role,
-            content: chat.content,
-            modelType,
-        }));
-
-        // find the document by ID
+        // Find the document by ID
         const file = await chatmodel.findById(chatId);
         const theDocument = await Doc.findById(file.documentId);
 
+        // Calculate similarity between query and chunks
         const similarityResults = [];
         const queryEmb = await getEmbeddings(query);
 
-        for (const file of theDocument.Files) {
-            for (const chunk of file.Chunks) {
-                const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
-                similarityResults.push({ chunk, similarity });
-            }
+        for (const chunk of theDocument.Files[0].Chunks) {
+            const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
+            similarityResults.push({ chunk, similarity });
         }
 
-        // choosing top three chunks with the highest similarity
+        // Choose top three chunks with highest similarity
         similarityResults.sort((a, b) => b.similarity - a.similarity);
-        let contextsTopSimilarityChunks = similarityResults.slice(0, 5).map((result) => result.chunk);
-        contextsTopSimilarityChunks = contextsTopSimilarityChunks.map((chunk) => chunk.rawText);
+        const contextsTopSimilarityChunks = similarityResults.slice(0, 3).map((result) => result.chunk.rawText);
 
         // Build the prompt
         const languageResponse = 'English'; // Default output language is English
-        const promptStart = `Answer the question based on the context below only and answer in details
-                             with ${languageResponse}:\n\n`;
+        const promptStart = `Answer the question based on the context below only and answer in detail with ${languageResponse}:\n\n`;
         const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
         const prompt = `${promptStart} ${contextsTopSimilarityChunks} ${promptEnd}`;
+
+        console.log('Prompt:', prompt);
 
         chathistory.push({ role: 'user', content: prompt });
 
         // Get completion from the model
+        let response;
 
-        // get the response from the model based on the model specified
-        const response = await getCompletion(prompt, modelType);
+        if (modelType === 'openai') {
+            response = await getCompletion(chathistory, modelType);
+        } else if (modelType === 'gemini-text') {
+            response = await getCompletion(prompt, modelType);
+        } else {
+            throw new Error('Invalid model type');
+        }
 
-        console.log(response);
-
-        // Update chatmodel
-        await chatmodel.findOneAndUpdate(
-            { _id: chatId },
-            { $push: { messages: { role: 'assistant', content: response } } }
-        );
+        // Update chat model with assistant response
+        await chatmodel.findOneAndUpdate({ _id: chatId }, { $push: { messages: { role: 'assistant', content: response } } });
 
         // Return the response
-        res.status(200).json({ response: response, topchunks: contextsTopSimilarityChunks, similarityResults });
+        res.status(200).json({ response, topchunks: contextsTopSimilarityChunks });
     } catch (error) {
-        res.json({ error: error.message });
+        res.status(500).json({ error: error.message });
     }
 };

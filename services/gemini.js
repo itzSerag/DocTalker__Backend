@@ -51,12 +51,11 @@ exports.textOnly = async (prompt) => {
     // prompt is a single string
     try {
         const result = await model.generateContent(prompt);
-        const chatResponse = result?.response?.text();
 
-        return chatResponse;
+        return result.response.text()
     } catch (error) {
         console.error('textOnly | error', error);
-        return { Error: 'Uh oh! Caught error while fetching AI response' };
+        return { Error: 'Caught error while fetching AI response' };
     }
 };
 

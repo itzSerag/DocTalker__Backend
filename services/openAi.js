@@ -12,6 +12,7 @@ exports.getCompletionfromOpenAI = async (prompt) => {
         temperature: 0.5,
         max_tokens: 500,
         messages: prompt,
+        stream: false, //////  CHANGE THIS TO TRUE
     });
 
     console.log(completion.choices[0].message);

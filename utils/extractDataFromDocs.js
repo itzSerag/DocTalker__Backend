@@ -1,10 +1,10 @@
 const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
+const pdfParse = require('pdf-parse');
 const minify = require('string-minify');
 const mammoth = require('mammoth');
 const { log } = require('console');
 const fetch = require('node-fetch');
 const { textAndImage } = require('../services/gemini');
-const pdf2json = require('pdf2json');
 
 exports.convertDocToChunks = async (FileName, FileUrl) => {
     // GET THEM FROM DB
@@ -35,17 +35,24 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         text += '\nThis is the end of page';
 
         documentContent = text;
+        console.log('final text :::::::::::: \n' + documentContent);
+    } else if (FileUrl.startsWith('handwritten')) {
+        // extract the data from the gemini text by passing the array of url
+        // return the text in the image
 
+        const text = 'This is a start of page';
+        text += (await textAndImage(FileUrl)).toString;
+        text += 'This is the end of page';
+
+        documentContent = text;
     } else if (myFileUrlString.endsWith('.pdf')) {
         // For PDF files
         const pdfData = await fetch(FileUrl);
         const buffer = await pdfData.arrayBuffer();
 
-        // Extract text from pdf using pdf2json
-        const pdfParser = new pdf2json();
-        pdfParser.parseBuffer(buffer);
-        const pdfText = pdfParser.getRawTextContent();
-        documentContent = pdfText;
+        // extract text from pdf
+        const pdfText = await pdfParse(buffer);
+        documentContent = pdfText.text;
 
         // TODO : ADD MORE FILE TYPES
     } else if (FileUrl.endsWith('.docx')) {
@@ -62,7 +69,7 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         documentContent = await txtData.text();
     } else {
         // For other file types
-        return null;
+        return NULL;
     }
 
     // Minify the text

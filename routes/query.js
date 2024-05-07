@@ -3,6 +3,7 @@ const queryController = require('../controllers/queryController'); // Update the
 const { auth } = require('../middlewares/auth');
 const router = express.Router();
 
+
 // process the query coming from the user
 router.post('/query-process', auth, queryController.handler);
 

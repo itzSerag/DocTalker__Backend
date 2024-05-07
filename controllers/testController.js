@@ -1,13 +1,29 @@
 
-exports.test = (req, res) => {
-    
+exports.test = async (req, res) => {
+
+   
+
     res.status(200).json({
-        message: 'Test route',
+        message: tokenMessage,
+        tokens : tokens ,
+        tokenLength : tokens.length
     });
 }
 
+
+
+
+
+
+
+// ###############################
+
+
 exports.testWithAuth = (req, res) => {
+
+
     res.status(200).json({
         message: 'Test route with auth',
+
     });
 }

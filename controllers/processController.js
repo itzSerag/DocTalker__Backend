@@ -1,13 +1,11 @@
 const DocumentModel = require('../models/Document');
-const ChatModel = require('../models/Chat'); // Update Chat model import
+const ChatModel = require('../models/Chat');
 const { connectDB } = require('../config/database');
 const { convertDocToChunks } = require('../utils/extractDataFromDocs');
 const { getEmbeddings } = require('../services/huggingface');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
-
-
 
 exports.handler = catchAsync(async (req, res, next) => {
     if (req.method !== 'POST') {
@@ -35,13 +33,11 @@ exports.handler = catchAsync(async (req, res, next) => {
 
         // OPTIONAL
         if (document.isProcessed) {
-            return next(new AppError('Document has already has been processed', 400));
+            return next(new AppError('Document has already been processed', 400));
         }
 
         // Loop through each file in the document
         for (const file of document.Files) {
-            console.log('Processing file:', file.FileName, file.FileURL);
-
             const chunks = await convertDocToChunks(file.FileName, file.FileURL);
 
             const vectors = [];
@@ -82,5 +78,7 @@ exports.handler = catchAsync(async (req, res, next) => {
     } catch (error) {
         console.error(error);
         await session.abortTransaction();
+    } finally {
+        session.endSession();
     }
 });
