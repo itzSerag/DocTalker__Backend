@@ -72,6 +72,7 @@ const chatRoutes = require('../routes/chatRoute');
 const extractionRoutes = require('../routes/extractions');
 const feedbackRoutes = require('../routes/feedbackRoute');
 const handwrittenRoutes = require('../routes/handwrittenRoute');
+const testRoutes = require('../routes/testRoute');
 
 // Mount routes
 app.use('/api/payment', paymentRoutes);
@@ -81,6 +82,9 @@ app.use('/api/user', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/extractions', extractionRoutes);
 app.use('/api/feedback', feedbackRoutes);
+
+// Test routes
+app.use('/api/test', testRoutes);
 
 // app.use('/api/starMesaage', chatRoutes);
 
