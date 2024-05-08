@@ -2,12 +2,12 @@ const AppError = require('../utils/appError');
 
 const subscriptions = {
     free: {
-        maxUploadRequest: 2,
+        maxUploadRequest: 3,
         queryMax: 5,
         supportedFiles: ['pdf'],
     },
     gold: {
-        maxUploadRequest: 5,
+        maxUploadRequest: 10,
         queryMax: 100,
         supportedFiles: ['pdf', 'docx', 'txt'],
     },

@@ -6,7 +6,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { HarmBlockThreshold, HarmCategory } = require('@google/generative-ai');
 const { processImages } = require('../utils/processImages');
 
-// We can put these on a separate file but its fine for now
+// ?? We can put these on a separate file but its fine for now
 
 const config = {
     gemini: {
