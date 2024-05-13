@@ -4,6 +4,6 @@ const { auth } = require('../middlewares/auth');
 const router = express.Router();
 
 // Process a payment
-router.post('/process-payment', auth, controller.createCheckoutSession);
+router.post('/payment-checkout',auth, controller.createCheckoutSession);
 
 module.exports = router;

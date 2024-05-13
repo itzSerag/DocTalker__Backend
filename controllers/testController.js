@@ -9,6 +9,10 @@ const openai = new OpenAI({
 
 exports.test = async (req, res) => {
 
+
+
+
+
     const completion = await openai.chat.completions.create({
         model: 'gpt-3.5-turbo',
         messages: [
@@ -18,7 +22,7 @@ exports.test = async (req, res) => {
             },
             {
                 role: 'user',
-                content: 'What is the fastest car in the world? say in 500 words at least.',
+                content: 'what the weather today looks like',
             },
         ],
 
@@ -36,6 +40,10 @@ exports.test = async (req, res) => {
     res.write(chunk.choices[0]?.delta?.content || '')
     final_response += chunk.choices[0]?.delta?.content || ''
     }
+
+    // deal with the final response
+    // !! Long response  > 4096 tokens are not throwing an error but it the response is :
+    // !!    It looks like you have entered a long list of words. Is there anything specific you would like help with or any information you need? Feel free to ask!
 
     res.end()
     

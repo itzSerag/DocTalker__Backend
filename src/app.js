@@ -64,12 +64,12 @@ app.use(passport.session());
 app.use('/api', limiter);
 
 // Routes
-const paymentRoutes = require('../routes/payment');
-const uploadRoute = require('../routes/upload');
-const queryRoute = require('../routes/query');
+const paymentRoutes = require('../routes/paymentRoute');
+const uploadRoute = require('../routes/uploadRoute');
+const queryRoute = require('../routes/queryRoute');
 const userRoutes = require('../routes/userRoute');
 const chatRoutes = require('../routes/chatRoute');
-const extractionRoutes = require('../routes/extractions');
+const extractionRoutes = require('../routes/extractionsRoute');
 const feedbackRoutes = require('../routes/feedbackRoute');
 const handwrittenRoutes = require('../routes/handwrittenRoute');
 const testRoutes = require('../routes/testRoute');
