@@ -39,49 +39,37 @@ exports.handler = catchAsync(async (req, res, next) => {
         }
 
 
-        if (document.FileName.endsWith('.pdf')) {
-            for (const file of document.Files) {
-                const chunks = await convertDocToChunks(file.FileName , file.FileURL , file.FileKey);
+        // Assuming Files is an array of file objects
+    for (const file of document.Files) {
 
-                const vectors = [];
-                for (const chunk of chunks) {
-                    const embedding = await getEmbeddings(chunk.chunk);
-                    vectors.push({
-                        rawText: chunk.chunk,
-                        embeddings: embedding,
-                        pageNumber: chunk.pageNumber,
-                    });
-                }
+        try {
 
-                // Update the chunks and isProcessed flag in the file
-                file.Chunks = vectors;
-                file.isProcessed = true;
-            }
-        }
+            // Convert the document to chunks based on the file type
+            const chunks = await convertDocToChunks(file.FileName, file.FileURL, file.FileKey);
 
-        // the file is an txt or docx -- > chunk has no page Number
+            const vectors = [];
+            // Process each chunk
+            await Promise.all(chunks.map(async (chunk) => {
+                // Get embeddings for the chunk
+                const embedding = await getEmbeddings(chunk.chunk);
+                // Store chunk data
+                vectors.push({
+                    rawText: chunk.chunk,
+                    embeddings: embedding,
+                    pageNumber: chunk.pageNumber || null, // Use null if page number is not available
+                });
+            }));
 
-        if (document.FileName.endsWith('.txt') || document.FileName.endsWith('.docx')) {
-            
-            for (const file of document.Files) {
-                const chunks = await convertDocToChunks(file.FileName, file.FileURL , file.FileKey);
-
-                const vectors = [];
-                for (const chunk of chunks) {
-                    const embedding = await getEmbeddings(chunk);
-                    vectors.push({
-                        rawText: chunk,
-                        embeddings: embedding,
-                        pageNumber: null,
-                    });
-                }
-
-            // Update the chunks and isProcessed flag in the file
-            file.Chunks.raw = vectors;
+            // Update file object with processed chunks
+            file.Chunks = vectors;
             file.isProcessed = true;
 
-            }
+        } catch (error) {
+            // Handle errors gracefully
+            console.error(`Error processing file ${file.FileName}: ${error.message}`);
         }
+    }
+
 
 
         await document.save({ session: session });
@@ -101,6 +89,8 @@ exports.handler = catchAsync(async (req, res, next) => {
         await currentUser.save({ session: session });
 
         await session.commitTransaction();
+
+
         return res.status(200).json({
             status: 'success',
             message: 'Document processed and uploaded to MongoDB successfully',

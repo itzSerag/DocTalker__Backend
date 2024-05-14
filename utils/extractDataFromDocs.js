@@ -61,139 +61,76 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
     } else {
     
 
-        const splitter = new RecursiveCharacterTextSplitter({
-            chunkSize: 512,
-            chunkOverlap: 50,
-        });
+        const loader = createLoader(FileName, FileKey, s3Config);
+
+        if (!loader) {
+            throw new Error('Unsupported file type');
+        }
+
+        const documents = await loader.load();
+        const chunksWithPageNumber = [];
+
+        for (const document of documents) {
+            const pageContent = document.pageContent;
+            const pageNumber = document.metadata.loc.pageNumber;
 
 
-        let loader;
-        const KEY = FileKey;
+            // supposing 800 is max of one chunk
 
-    
-
-        let docType = null;
-
-
-
-        if (FileName.endsWith('.pdf')) {
-           
-
-            loader = new S3Loader({
-                bucket: process.env.AWS_BUCKET_NAME,
-                key: KEY,
-                s3Config: s3Config,
-
-            UnstructuredLoader: PDFLoader,
-            });
-
-            
-            const documents = await loader.load();
-            const chunksWithPageNumber = [];
-
-            for (const document of documents) {
-                const pageContent = document.pageContent; // Get the page content(text)
-                const pageNumber = document.metadata.loc.pageNumber; // Get the page number
-
-
-                if (pageContent.trim().length > 1600) {
-                    // split the page into chunks
-                    const chunks = await splitter.splitText(pageContent);
-                    // add each chunk with its page number to the array
-                    for (const chunk of chunks) {
-                        chunksWithPageNumber.push({
-                            pageNumber: pageNumber, // Add the page number or null
-                            chunk: chunk,
-                        });
-                    }
-                } else {
-                    // add the page content as one chunk with its page number
+            if (pageContent.trim().length > 800) {
+                const chunks = await splitter.splitText(pageContent);
+                chunks.forEach(chunk => {
                     chunksWithPageNumber.push({
-                        pageNumber: pageNumber, // Add the page number or null
-                        chunk: pageContent,
+                        pageNumber: pageNumber || null,
+                        chunk: chunk,
                     });
-                }
+                });
+            } else {
+                chunksWithPageNumber.push({
+                    pageNumber: pageNumber,
+                    chunk: pageContent,
+                });
             }
-
-            return chunksWithPageNumber
-
         }
 
-        if (FileName.endsWith('.docx')) {
-
-            docType = 'docx';
-            loader = new S3Loader({
-                bucket: process.env.AWS_BUCKET_NAME,
-                key: KEY,
-                s3Config: s3Config,
-
-            UnstructuredLoader: DocxLoader,
-            });
-        }
-
-        if (FileName.endsWith('.txt')) {
-
-            docType = 'txt';
-            loader = new S3Loader({
-                bucket: process.env.AWS_BUCKET_NAME,
-                key: KEY,
-                s3Config: s3Config,
-            UnstructuredLoader: TextLoader,
-            });
-        }
-
-        if (FileName.endsWith('txt') || FileName.endsWith('docx') ){
-
-            const documents = await loader.load();
-            const chunks = splitter.splitText(documents.pageContent);
-
-            return chunks;
-        }
+        return chunksWithPageNumber;
     }
+
 }
 
 
 
 
-//     for (const document of documents) {
-//         const pageContent = document.pageContent;
-        
-//         // Check if the document is a PDF
-//         if (docType === 'pdf') {
-//             const pageNumber = document.metadata.loc.pageNumber; // Get the page number
-            
-//             if (pageContent.trim().length > 1600) {
-//                 // split the page into chunks
-//                 const chunks = await splitter.splitText(pageContent);
-                
-            
-//                 // add each chunk with its page number to the array
-//                 for (const chunk of chunks) {
-
-//                     chunksWithPageNumber.push({
-//                         pageNumber: pageNumber, // Add the page number or null
-//                         chunk: chunk,
-//                     });
-//                 }
-//             } else {
-//                 // add the page content as one chunk with its page number
-//                 chunksWithPageNumber.push({
-//                     pageNumber: pageNumber, // Add the page number or null
-//                     chunk: pageContent,
-//                 });
-//             }
-        
-//         } else {
-//             // add the page content as one chunk with its page number
-//             const chunks = await splitter.splitText(pageContent);
-//             return chunks;
-//         }
-           
-//     }
     
-//     return chunksWithPageNumber;
-// }
-    
+// Helper :
 
 
-    
+function createLoader(FileName, FileKey, s3Config) {
+    let loader;
+    const KEY = FileKey;
+
+    if (FileName.endsWith('.pdf')) {
+        loader = new S3Loader({
+            bucket: process.env.AWS_BUCKET_NAME,
+            key: KEY,
+            s3Config: s3Config,
+            UnstructuredLoader: PDFLoader,
+        });
+    } else if (FileName.endsWith('.docx')) {
+        loader = new S3Loader({
+            bucket: process.env.AWS_BUCKET_NAME,
+            key: KEY,
+            s3Config: s3Config,
+            UnstructuredLoader: DocxLoader,
+        });
+    } else if (FileName.endsWith('.txt')) {
+        loader = new S3Loader({
+            bucket: process.env.AWS_BUCKET_NAME,
+            key: KEY,
+            s3Config: s3Config,
+            UnstructuredLoader: TextLoader,
+        });
+    }
+
+    return loader;
+}
