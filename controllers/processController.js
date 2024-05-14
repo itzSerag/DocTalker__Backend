@@ -8,6 +8,8 @@ const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
 
 exports.handler = catchAsync(async (req, res, next) => {
+
+
     if (req.method !== 'POST') {
         return res.status(400).json({ message: 'HTTP method not allowed' });
     }
@@ -36,23 +38,51 @@ exports.handler = catchAsync(async (req, res, next) => {
             return next(new AppError('Document has already been processed', 400));
         }
 
-        // Loop through each file in the document
-        for (const file of document.Files) {
-            const chunks = await convertDocToChunks(file.FileName, file.FileURL);
 
-            const vectors = [];
-            for (const chunk of chunks) {
-                const embedding = await getEmbeddings(chunk);
-                vectors.push({
-                    rawText: chunk,
-                    embeddings: embedding,
-                });
+        if (document.FileName.endsWith('.pdf')) {
+            for (const file of document.Files) {
+                const chunks = await convertDocToChunks(file.FileName , file.FileURL , file.FileKey);
+
+                const vectors = [];
+                for (const chunk of chunks) {
+                    const embedding = await getEmbeddings(chunk.chunk);
+                    vectors.push({
+                        rawText: chunk.chunk,
+                        embeddings: embedding,
+                        pageNumber: chunk.pageNumber,
+                    });
+                }
+
+                // Update the chunks and isProcessed flag in the file
+                file.Chunks = vectors;
+                file.isProcessed = true;
             }
+        }
+
+        // the file is an txt or docx -- > chunk has no page Number
+
+        if (document.FileName.endsWith('.txt') || document.FileName.endsWith('.docx')) {
+            
+            for (const file of document.Files) {
+                const chunks = await convertDocToChunks(file.FileName, file.FileURL , file.FileKey);
+
+                const vectors = [];
+                for (const chunk of chunks) {
+                    const embedding = await getEmbeddings(chunk);
+                    vectors.push({
+                        rawText: chunk,
+                        embeddings: embedding,
+                        pageNumber: null,
+                    });
+                }
 
             // Update the chunks and isProcessed flag in the file
-            file.Chunks = vectors;
+            file.Chunks.raw = vectors;
             file.isProcessed = true;
+
+            }
         }
+
 
         await document.save({ session: session });
 
@@ -75,6 +105,8 @@ exports.handler = catchAsync(async (req, res, next) => {
             status: 'success',
             message: 'Document processed and uploaded to MongoDB successfully',
         });
+
+        
     } catch (error) {
         console.error(error);
         await session.abortTransaction();

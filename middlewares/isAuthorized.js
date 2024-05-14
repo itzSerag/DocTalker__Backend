@@ -28,14 +28,15 @@ exports.checkSubscription = () => {
     return (req, res, next) => {
         const { subscription } = req.user;
         if (!subscription || !subscriptions[subscription]) {
-            return next(new AppError('Invalid subscription type', 400));
+            return next(new AppError('Invalid subscription type or not found', 400));
         }
         if (subscription === 'premium' || subscription === 'admin') {
-            return next();
+            return next(); // they both have unlimited access
         }
         return next(new AppError('You are not authorized to access this resource', 403));
     };
 };
+
 
 exports.checkUploadRequest = (req, res, next) => {
     const { subscription } = req.user;
@@ -47,6 +48,7 @@ exports.checkUploadRequest = (req, res, next) => {
     }
 };
 
+
 exports.checkQueryRequest = (req, res, next) => {
     const { subscription } = req.user;
     const queryMax = subscriptions[subscription].queryMax;
@@ -56,6 +58,7 @@ exports.checkQueryRequest = (req, res, next) => {
         return next(new AppError('You have reached your query limit of Uploading', 403));
     }
 };
+
 
 exports.checkFileType = (req, res, next) => {
     let files = [];

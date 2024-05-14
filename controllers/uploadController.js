@@ -27,8 +27,8 @@ exports.fileUpload = catchAsync(async (req, res, next) => {
             Files: [
                 {
                     FileName: file.originalname,
-                    FileKey: file.originalname,
-                    FileURL: dataLocation,
+                    FileURL: dataLocation.Location,
+                    FileKey: dataLocation.Key,
                 },
             ],
         });
@@ -80,17 +80,16 @@ exports.folderUpload = catchAsync(async (req, res, next) => {
         }
         const uploadFolderNameWithUserId = currUser._id.toString();
 
-        const ArrayOfdataLocation = await uploadFolder(files, uploadFolderNameWithUserId, folderName);
+        const [Locations , Keys] = await uploadFolder(files, uploadFolderNameWithUserId, folderName);
 
-        console.log('dataLocationsFOlder : ' + ArrayOfdataLocation);
-
+        console.log(Keys , Locations);
         
         const folder = new Doc({
             FileName: folderName,
             Files: files.map((file) => ({
                 FileName: file.originalname,
-                FileKey: file.originalname,
-                FileURL: ArrayOfdataLocation[files.indexOf(file)],
+                FileKey: Keys[0][files.indexOf(file)],
+                FileURL: Locations[0][files.indexOf(file)],
             })),
         });
 
@@ -122,3 +121,4 @@ exports.folderUpload = catchAsync(async (req, res, next) => {
         session.endSession();
     }
 });
+

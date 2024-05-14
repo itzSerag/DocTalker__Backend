@@ -1,23 +1,34 @@
 const { RecursiveCharacterTextSplitter } = require('langchain/text_splitter');
-const pdfParse = require('pdf-parse');
-const minify = require('string-minify');
-const mammoth = require('mammoth');
-const { log } = require('console');
-const fetch = require('node-fetch');
+const {S3Loader} = require('langchain/document_loaders/web/s3');
+const {PDFLoader} = require('langchain/document_loaders/fs/pdf');
+const {DocxLoader} = require('langchain/document_loaders/fs/docx');
+const {TextLoader} = require('langchain/document_loaders/fs/text');
+
 const { textAndImage } = require('../services/gemini');
 
-exports.convertDocToChunks = async (FileName, FileUrl) => {
+
+
+// !! ADD IT TO CONFIG FILE
+const s3Config = {
+    region: process.env.AWS_BUCKET_REGION,
+    credentials: {
+      accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+      secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+  };
+
+
+
+
+
+exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
     // GET THEM FROM DB
 
-    log('FileName ::: ' + FileName + ' FileUrl ::: ' + FileUrl);
+    console.log('FileName ::: ' + FileName + ' FileUrl ::: ' + FileUrl );
 
-    const splitter = new RecursiveCharacterTextSplitter({
-        chunkSize: 512,
-        chunkOverlap: 50,
-    });
 
     let documentContent;
-    const myFileUrlString = FileName;
+
 
     if (FileName.endsWith('.png' || '.jpg' || '.jpeg' || '.gif' || '.svg' || '.bmp' || '.tiff' || '.webp')) {
         // work with the array of url
@@ -29,14 +40,15 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
 
         const generatedContent = await textAndImage(fileUrl);
 
-        log('generatedContent ::: ' + generatedContent);
         text += generatedContent;
 
         text += '\nThis is the end of page';
 
         documentContent = text;
         console.log('final text :::::::::::: \n' + documentContent);
-    } else if (FileUrl.startsWith('handwritten')) {
+
+
+    } else if (FileName.startsWith('handwritten')) {
         // extract the data from the gemini text by passing the array of url
         // return the text in the image
 
@@ -45,38 +57,143 @@ exports.convertDocToChunks = async (FileName, FileUrl) => {
         text += 'This is the end of page';
 
         documentContent = text;
-    } else if (myFileUrlString.endsWith('.pdf')) {
-        // For PDF files
-        const pdfData = await fetch(FileUrl);
-        const buffer = await pdfData.arrayBuffer();
 
-        // extract text from pdf
-        const pdfText = await pdfParse(buffer);
-        documentContent = pdfText.text;
-
-        // TODO : ADD MORE FILE TYPES
-    } else if (FileUrl.endsWith('.docx')) {
-        // For Word documents (.docx)
-        const docxData = await fetch(FileUrl);
-        const buffer = await docxData.arrayBuffer();
-        const result = await mammoth.extractRawText({ arrayBuffer: buffer });
-        documentContent = result.value;
-
-        // TXT FILES
-    } else if (FileUrl.endsWith('.txt')) {
-        // For plain text files
-        const txtData = await fetch(FileUrl);
-        documentContent = await txtData.text();
     } else {
-        // For other file types
-        return NULL;
+    
+
+        const splitter = new RecursiveCharacterTextSplitter({
+            chunkSize: 512,
+            chunkOverlap: 50,
+        });
+
+
+        let loader;
+        const KEY = FileKey;
+
+    
+
+        let docType = null;
+
+
+
+        if (FileName.endsWith('.pdf')) {
+           
+
+            loader = new S3Loader({
+                bucket: process.env.AWS_BUCKET_NAME,
+                key: KEY,
+                s3Config: s3Config,
+
+            UnstructuredLoader: PDFLoader,
+            });
+
+            
+            const documents = await loader.load();
+            const chunksWithPageNumber = [];
+
+            for (const document of documents) {
+                const pageContent = document.pageContent; // Get the page content(text)
+                const pageNumber = document.metadata.loc.pageNumber; // Get the page number
+
+
+                if (pageContent.trim().length > 1600) {
+                    // split the page into chunks
+                    const chunks = await splitter.splitText(pageContent);
+                    // add each chunk with its page number to the array
+                    for (const chunk of chunks) {
+                        chunksWithPageNumber.push({
+                            pageNumber: pageNumber, // Add the page number or null
+                            chunk: chunk,
+                        });
+                    }
+                } else {
+                    // add the page content as one chunk with its page number
+                    chunksWithPageNumber.push({
+                        pageNumber: pageNumber, // Add the page number or null
+                        chunk: pageContent,
+                    });
+                }
+            }
+
+            return chunksWithPageNumber
+
+        }
+
+        if (FileName.endsWith('.docx')) {
+
+            docType = 'docx';
+            loader = new S3Loader({
+                bucket: process.env.AWS_BUCKET_NAME,
+                key: KEY,
+                s3Config: s3Config,
+
+            UnstructuredLoader: DocxLoader,
+            });
+        }
+
+        if (FileName.endsWith('.txt')) {
+
+            docType = 'txt';
+            loader = new S3Loader({
+                bucket: process.env.AWS_BUCKET_NAME,
+                key: KEY,
+                s3Config: s3Config,
+            UnstructuredLoader: TextLoader,
+            });
+        }
+
+        if (FileName.endsWith('txt') || FileName.endsWith('docx') ){
+
+            const documents = await loader.load();
+            const chunks = splitter.splitText(documents.pageContent);
+
+            return chunks;
+        }
     }
+}
 
-    // Minify the text
-    documentContent = minify(documentContent);
 
-    // Split the text into chunks
-    const chunks = await splitter.splitText(documentContent);
 
-    return chunks;
-};
+
+//     for (const document of documents) {
+//         const pageContent = document.pageContent;
+        
+//         // Check if the document is a PDF
+//         if (docType === 'pdf') {
+//             const pageNumber = document.metadata.loc.pageNumber; // Get the page number
+            
+//             if (pageContent.trim().length > 1600) {
+//                 // split the page into chunks
+//                 const chunks = await splitter.splitText(pageContent);
+                
+            
+//                 // add each chunk with its page number to the array
+//                 for (const chunk of chunks) {
+
+//                     chunksWithPageNumber.push({
+//                         pageNumber: pageNumber, // Add the page number or null
+//                         chunk: chunk,
+//                     });
+//                 }
+//             } else {
+//                 // add the page content as one chunk with its page number
+//                 chunksWithPageNumber.push({
+//                     pageNumber: pageNumber, // Add the page number or null
+//                     chunk: pageContent,
+//                 });
+//             }
+        
+//         } else {
+//             // add the page content as one chunk with its page number
+//             const chunks = await splitter.splitText(pageContent);
+//             return chunks;
+//         }
+           
+//     }
+    
+//     return chunksWithPageNumber;
+// }
+    
+
+
+    
