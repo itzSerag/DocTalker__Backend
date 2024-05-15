@@ -72,8 +72,14 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
 
         for (const document of documents) {
             const pageContent = document.pageContent;
-            const pageNumber = document.metadata.loc.pageNumber;
+            
+            let pageNumber = 0
 
+            try{
+            pageNumber = document.metadata.loc.pageNumber
+            }catch(e){
+                pageNumber = 0
+            }
 
             // supposing 800 is max of one chunk
 
@@ -81,7 +87,7 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
                 const chunks = await splitter.splitText(pageContent);
                 chunks.forEach(chunk => {
                     chunksWithPageNumber.push({
-                        pageNumber: pageNumber || null,
+                        pageNumber: pageNumber,
                         chunk: chunk,
                     });
                 });
