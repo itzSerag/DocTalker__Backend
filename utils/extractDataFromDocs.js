@@ -9,6 +9,12 @@ const { textAndImage } = require('../services/gemini');
 
 
 // !! ADD IT TO CONFIG FILE
+const splitter = new RecursiveCharacterTextSplitter({
+    chunkOverlap: 50,
+    chunkSize : 512,
+
+});
+
 const s3Config = {
     region: process.env.AWS_BUCKET_REGION,
     credentials: {
@@ -16,6 +22,7 @@ const s3Config = {
       secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
     },
   };
+
 
 
 
@@ -72,6 +79,11 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
 
         for (const document of documents) {
             const pageContent = document.pageContent;
+
+            if (pageContent === undefined) {
+                // this is a document that has no text content
+                continue;
+            }
             
             let pageNumber = 0
 
@@ -83,7 +95,8 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
 
             // supposing 800 is max of one chunk
 
-            if (pageContent.trim().length > 800) {
+            if (pageContent.trim().length > 800)
+            {
                 const chunks = await splitter.splitText(pageContent);
                 chunks.forEach(chunk => {
                     chunksWithPageNumber.push({
