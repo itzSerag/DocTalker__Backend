@@ -34,8 +34,6 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
     console.log('FileName ::: ' + FileName + ' FileUrl ::: ' + FileUrl );
 
 
-    let documentContent;
-
 
     if (FileName.endsWith('.png' || '.jpg' || '.jpeg' || '.gif' || '.svg' || '.bmp' || '.tiff' || '.webp')) {
         // work with the array of url
@@ -50,20 +48,32 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
         text += generatedContent;
 
         text += '\nThis is the end of page';
+        const match = FileName.match(/image(\d+)/);
 
-        documentContent = text;
-        console.log('final text :::::::::::: \n' + documentContent);
+        let documentContent = [{
+            pageNumber: match ? parseInt(match[1]) : null,
+            chunk: text,
+        }]
 
+        console.log(documentContent);
 
-    } else if (FileName.startsWith('handwritten')) {
-        // extract the data from the gemini text by passing the array of url
-        // return the text in the image
+        return documentContent
+        
 
-        const text = 'This is a start of page';
-        text += (await textAndImage(FileUrl)).toString;
-        text += 'This is the end of page';
+    // } else if (FileName.startsWith('handwritten')) {
+    //     // extract the data from the gemini text by passing the array of url
+    //     // return the text in the image
 
-        documentContent = text;
+    //     let text = 'This is a start of page';
+    //     text += (await textAndImage(FileUrl)).toString;
+    //     text += 'This is the end of page';
+
+    //     let documentContent = [{
+    //         pageNumber: null,
+    //         chunk: text,
+    //     }]
+
+    //     return documentContent
 
     } else {
     

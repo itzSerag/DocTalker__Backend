@@ -24,15 +24,15 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
         const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype, filerWithUserId);
 
         // Generate images from the uploaded PDF
-        const ArrayImagesBody = await generateImagesFromS3Doc(dataLocation);
+        const ArrayImagesBody = await generateImagesFromS3Doc(dataLocation.Location);
 
         // Upload images to S3
         const ArrayImages = [];
         for (const image of ArrayImagesBody) {
             const fileName = `${file.originalname} image${ArrayImagesBody.indexOf(image) + 1}`;
-            const fileKey = `${file.originalname} image${ArrayImagesBody.indexOf(image) + 1}`;
+            const fileKey = `${dataLocation.Key} image${ArrayImagesBody.indexOf(image) + 1}`;
             const fileURL = await uploadFile(fileName, image, 'image/png', imageFolderWithinPdf);
-            ArrayImages.push({ FileName: fileName, FileKey: fileKey, FileURL: fileURL });
+            ArrayImages.push({ FileName: fileName, FileKey: fileKey, FileURL: fileURL.Location });
         }
 
         // Save document information to the database
