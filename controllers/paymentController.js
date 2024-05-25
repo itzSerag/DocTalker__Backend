@@ -1,5 +1,4 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const { response } = require('express');
 const PaymentModel = require('../models/Payment');
 const User = require('../models/User');
 
@@ -34,7 +33,7 @@ exports.createCheckoutSession = async (req, res) => {
     
             
             mode: 'payment',
-            success_url: `http://localhost:5000/success.html?id={CHECKOUT_SESSION_ID}`,
+            success_url: `http://localhost:5000/success`,
             cancel_url: 'http://localhost:5000/cancel',
         });
 
@@ -72,36 +71,21 @@ exports.createCheckoutSession = async (req, res) => {
 // !! MUST DO IT AFTER THE PAYMENT IS DONE -- AFTER DocTalker IS PUBLICLY AVAILABLE
 
 exports.paymentSucess = async (req, res) => {
-
-    // make web hook -- strip web hook exactly
-
-    const endpointSecret = process.env.ENDPOINT_SECRET;
-    const sig = request.headers['stripe-signature'];
-
-
-    try {
-        event = stripe.webhooks.constructEvent(request.body, sig, endpointSecret);
-      } catch (err) {
-        response.status(400).send(`Webhook Error: ${err.message}`);
-        return;
-      }
+    const session = await stripe.checkout.sessions.retrieve(req.query.id);
+    const payment = await PaymentModel
+        .findOne({ session_id: session.id })
+        .populate('user');
     
-      // Handle the event
-      switch (event.type) {
-        case 'checkout.session.completed':
-          const checkoutSessionCompleted = event.data.object;
-          // Then define and call a function to handle the event checkout.session.completed
-          break;
-        case 'payment_intent.succeeded':
-          const paymentIntentSucceeded = event.data.object;
-          // Then define and call a function to handle the event payment_intent.succeeded
-          break;
-        // ... handle other event types
-        default:
-          console.log(`Unhandled event type ${event.type}`);
-      }
-    
-      // Return a 200 response to acknowledge receipt of the event
-      response.status(200).json({ status: "success" });
-    
+    // update the user subscription
+
+    const user = await User.findById(payment.user._id);
+    user.subscription = payment.product;
+
+    await user.save();
+
+    res.json({ 
+        status: 'success',
+        message: 'Payment successful && subscription updated',
+     });
+
 }

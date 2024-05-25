@@ -91,6 +91,16 @@ app.use('/api/test', testRoutes);
 // SUPER PREMIUM ROUTES
 app.use('/api/handwritten', handwrittenRoutes);
 
+
+
+//TEST PAYMENT succesful
+
+app.get('/successful' , (req,res)=>{
+
+    res.send('Payment successful')
+})
+
+
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {
     next(new AppError(`cant find ${req.originalUrl} on this server`, 404));
