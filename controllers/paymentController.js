@@ -30,11 +30,19 @@ exports.createCheckoutSession = async (req, res) => {
             ],
 
             customer_email: currUser.email,
+            
+
+            metadata: {
+                subscription_name: name,
+            },
+                
+
+
     
             
             mode: 'payment',
-            success_url: `http://localhost:5000/success`,
-            cancel_url: 'http://localhost:5000/cancel',
+            success_url: "http://localhost:5000/api/payment/success?id={CHECKOUT_SESSION_ID}",
+            cancel_url: 'http://localhost:5000/api/payment/cancel',
         });
 
         // as front end -- > got to session.url -- thats all what u need
@@ -71,21 +79,43 @@ exports.createCheckoutSession = async (req, res) => {
 // !! MUST DO IT AFTER THE PAYMENT IS DONE -- AFTER DocTalker IS PUBLICLY AVAILABLE
 
 exports.paymentSucess = async (req, res) => {
-    const session = await stripe.checkout.sessions.retrieve(req.query.id);
+    
+    // get session id from the query params
+    const { id } = req.query;
+
+    // get the session details from stripe
+    const session = await stripe.checkout.sessions.retrieve(id);
+    const subscription = session.metadata.subscription_name;
+
+    // get the payment details from the db and turn isPaid to true
     const payment = await PaymentModel
-        .findOne({ session_id: session.id })
+        .findOne({ session_id: id })
         .populate('user');
     
-    // update the user subscription
+    payment.isPaid = true;
+    
 
-    const user = await User.findById(payment.user._id);
-    user.subscription = payment.product;
+    // update user details
+    await User
+        .updateOne({ _id: payment.user._id }, {subscription: subscription});
 
-    await user.save();
+    await payment.save();
 
-    res.json({ 
-        status: 'success',
-        message: 'Payment successful && subscription updated',
-     });
 
+    return res.json({ 
+        status : "success",
+        message: 'Payment successful' ,
+       
+    });
 }
+
+exports.paymentCancel = async (req, res) => {
+
+
+    return res.json({ 
+        status : "failed",
+        message: 'Payment failed' ,
+       
+    });
+}
+

@@ -6,9 +6,8 @@ const router = express.Router();
 
 // Process a payment
 router.post('/process-payment',auth , paymentCheck, controller.createCheckoutSession);
+router.get('/success' ,controller.paymentSucess);
+router.get('/cancel' ,controller.paymentCancel);
 
-// webhook - success intent
-
-// router.post('/webhook', auth, controller.paymentSucess);
 
 module.exports = router;
