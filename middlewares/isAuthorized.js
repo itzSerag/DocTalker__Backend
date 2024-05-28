@@ -2,24 +2,15 @@ const AppError = require('../utils/appError');
 
 const subscriptions = {
     free: {
-        maxUploadRequest: 3,
-        queryMax: 5,
         supportedFiles: ['pdf'],
     },
     gold: {
-        maxUploadRequest: 10,
-        queryMax: 100,
         supportedFiles: ['pdf', 'docx', 'txt'],
     },
     premium: {
-        maxUploadRequest: 50,
-        queryMax: 1000,
         supportedFiles: ['all'],
     },
-
     admin: {
-        maxUploadRequest: 1000,
-        queryMax: 10000,
         supportedFiles: ['all'],
     },
 };
@@ -94,3 +85,4 @@ exports.checkFileType = (req, res, next) => {
     }
     next();
 };
+

@@ -3,56 +3,30 @@ const PaymentModel = require('../models/Payment');
 const User = require('../models/User');
 
 exports.createCheckoutSession = async (req, res) => {
-    const name  = req.productName;
-    const currUser = req.user
-    const price = req.price;
-
+    const { productName: name, price, user: currUser } = req;
 
     try {
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'], // only card payments for now
             client_reference_id: currUser._id,
-            line_items: [ 
-                {
-                    price_data: {
-                        currency: 'usd', // USD for now
-                        product_data: {
-                            name: name + " Subscription",
-                          
-                        },
-                        unit_amount: price * 100, // in cents  
-                       
+            line_items: [{
+                price_data: {
+                    currency: 'usd', // USD for now
+                    product_data: {
+                        name: name + " Subscription",
                     },
-                    quantity: 1,
+                    unit_amount: price * 100, // in cents  
                 },
-
-
-            ],
-
+                quantity: 1,
+            }],
             customer_email: currUser.email,
-            
-
             metadata: {
                 subscription_name: name,
             },
-                
-
-
-    
-            
             mode: 'payment',
             success_url: "http://localhost:5000/api/payment/success?id={CHECKOUT_SESSION_ID}",
-            cancel_url: 'http://localhost:5000/api/payment/cancel',
+            cancel_url: 'http://localhost:5000/api/payment/cancel?id={CHECKOUT_SESSION_ID}',
         });
-
-        // as front end -- > got to session.url -- thats all what u need
-
-        // handle the db and what to save in payment model
-        // save the session.id in the payment model
-        // save the user id in the payment model
-        // save the product name in the payment model
-        // save the price in the payment model
-        // save the date in the payment model
 
         const payment = new PaymentModel({
             user: currUser._id,
@@ -62,60 +36,64 @@ exports.createCheckoutSession = async (req, res) => {
         });
 
         await payment.save();
-        
-        /// to make changes after the payment is done
-        // we can use stripe webhooks
 
-
-        res.json({  session });
+        res.json({ session });
     } catch (error) {
         console.error('Error creating checkout session:', error);
         res.status(500).json({ error: 'Failed to create checkout session' });
     }
 };
 
-
-
-// !! MUST DO IT AFTER THE PAYMENT IS DONE -- AFTER DocTalker IS PUBLICLY AVAILABLE
-
-exports.paymentSucess = async (req, res) => {
-    
-    // get session id from the query params
+exports.paymentSuccess = async (req, res) => {
     const { id } = req.query;
 
-    // get the session details from stripe
-    const session = await stripe.checkout.sessions.retrieve(id);
-    const subscription = session.metadata.subscription_name;
+    try {
+        const session = await stripe.checkout.sessions.retrieve(id);
+        const subscription = session.metadata.subscription_name;
 
-    // get the payment details from the db and turn isPaid to true
-    const payment = await PaymentModel
-        .findOne({ session_id: id })
-        .populate('user');
-    
-    payment.isPaid = true;
-    
+        const payment = await PaymentModel.findOne({ session_id: id }).populate('user');
+        if (!payment) {
+            return res.status(404).json({ error: 'Payment not found' });
+        }
 
-    // update user details
-    await User
-        .updateOne({ _id: payment.user._id }, {subscription: subscription});
+        payment.isPaid = true;
 
-    await payment.save();
+        let queryMax = 0;
+        let maxUploadRequest = 0;
 
+        console.log('subscription:', subscription);
+        if (subscription === 'Gold') {
+            queryMax = 200;
+            maxUploadRequest = 30;
+        } else if (subscription === 'Premium') {
+            queryMax = 500;
+            maxUploadRequest = 50;
+        }
 
-    return res.json({ 
-        status : "success",
-        message: 'Payment successful' ,
-       
-    });
-}
+        payment.isPaid = true;
+        await payment.save();
+
+        await User.updateOne({ _id: payment.user._id }, {
+            $set: {
+                subscription,
+                queryMax,
+                maxUploadRequest
+            }
+        });
+
+        res.json({
+            status: "success",
+            message: 'Payment successful',
+        });
+    } catch (error) {
+        console.error('Error handling payment success:', error);
+        res.status(500).json({ error: 'Failed to handle payment success' });
+    }
+};
 
 exports.paymentCancel = async (req, res) => {
-
-
-    return res.json({ 
-        status : "failed",
-        message: 'Payment failed' ,
-       
+    res.json({
+        status: "failed",
+        message: 'Payment failed',
     });
-}
-
+};
