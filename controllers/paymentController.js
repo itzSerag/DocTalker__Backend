@@ -1,6 +1,7 @@
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const PaymentModel = require('../models/Payment');
 const User = require('../models/User');
+const AppError = require('../utils/appError');
 
 exports.createCheckoutSession = async (req, res) => {
     const { productName: name, price, user: currUser } = req;
@@ -44,6 +45,8 @@ exports.createCheckoutSession = async (req, res) => {
     }
 };
 
+
+
 exports.paymentSuccess = async (req, res) => {
     const { id } = req.query;
 
@@ -52,11 +55,13 @@ exports.paymentSuccess = async (req, res) => {
         const subscription = session.metadata.subscription_name;
 
         const payment = await PaymentModel.findOne({ session_id: id }).populate('user');
+        // now payment can access user data using payment.user
+
+        
         if (!payment) {
             return res.status(404).json({ error: 'Payment not found' });
         }
 
-        payment.isPaid = true;
 
         let queryMax = 0;
         let maxUploadRequest = 0;
@@ -65,12 +70,16 @@ exports.paymentSuccess = async (req, res) => {
         if (subscription === 'Gold') {
             queryMax = 200;
             maxUploadRequest = 30;
+            // set the subscription expires date after 30 days from now
+            payment.subscription_Expires_Date = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000);
+
         } else if (subscription === 'Premium') {
             queryMax = 500;
             maxUploadRequest = 50;
+            // set the subscription expires date after 90 days from now
+            payment.subscription_Expires_Date = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000);
         }
 
-        payment.isPaid = true;
         await payment.save();
 
         await User.updateOne({ _id: payment.user._id }, {
@@ -84,12 +93,14 @@ exports.paymentSuccess = async (req, res) => {
         res.json({
             status: "success",
             message: 'Payment successful',
+
         });
     } catch (error) {
         console.error('Error handling payment success:', error);
-        res.status(500).json({ error: 'Failed to handle payment success' });
+        next(new AppError('Error handling payment success', 500));
     }
 };
+
 
 exports.paymentCancel = async (req, res) => {
     res.json({

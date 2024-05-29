@@ -1,4 +1,5 @@
 const AppError = require('../utils/appError');
+const Payment = require('../models/Payment');
 
 const subscriptions = {
     free: {
@@ -21,6 +22,12 @@ exports.checkSubscription = () => {
         if (!subscription || !subscriptions[subscription]) {
             return next(new AppError('Invalid subscription type or not found', 400));
         }
+
+        // if user subscription is ended and not renewed -- > make the user free
+        if (req.user.subscription_Expires_Date && req.user.subscription_Expires_Date < new Date()) {
+            req.user.subscription = 'free';
+        }
+
         if (subscription === 'premium' || subscription === 'admin') {
             return next(); // they both have unlimited access
         }

@@ -20,9 +20,11 @@ const paymentSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    isPaid: {
-        type: Boolean,
-        default: false,
+
+    subscription_Expires_Date :{
+
+        type: Date,
+        default: null,
     },
     createdAt: {
         type: Date,
