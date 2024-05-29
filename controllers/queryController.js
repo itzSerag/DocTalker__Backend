@@ -27,20 +27,35 @@ exports.handler = async (req, res) => {
         const similarityResults = [];
         const queryEmb = await getEmbeddings(query);
 
-        for (const chunk of theDocument.Files[0].Chunks) {
-            const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
-            similarityResults.push({ chunk, similarity });
+        for (const file of theDocument.Files) {
+            for (const chunk of file.Chunks) {
+                const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
+                similarityResults.push({ chunk, similarity });
+            }
         }
 
         // Choose top three chunks with highest similarity
         similarityResults.sort((a, b) => b.similarity - a.similarity);
-        const contextsTopSimilarityChunks = similarityResults.slice(0, 3).map((result) => result.chunk.rawText);
+
+        // return that top 3 chunks with the page number
+        const contextsTopSimilarityChunks = similarityResults.slice(0, 5).map((result) => ({
+            rawText: result.chunk.rawText,
+            pageNumber: result.chunk.pageNumber
+        }));
+        
+        // thats what we pass to prompet
+        const rawTexts = contextsTopSimilarityChunks.map(chunk => chunk.rawText).join(' ');
+
+        
 
         // Build the prompt
         const languageResponse = 'English'; // Default output language is English
-        const promptStart = `Answer the question based on the context below only and answer in detail with ${languageResponse}:\n\n`;
+        const promptStart = `Answer the question based on the context below only , 
+                            if something not in context say i dont know this and answer the rest ,
+                            NEVER ANSWER SOMETHING NOT IN CONTEXT ,
+                            and answer in detail with ${languageResponse}:\n\n`;
         const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
-        const prompt = `${promptStart} ${contextsTopSimilarityChunks} ${promptEnd}`;
+        const prompt = `${promptStart} ${rawTexts} ${promptEnd}`;
 
         console.log('Prompt:', prompt);
 
@@ -61,7 +76,12 @@ exports.handler = async (req, res) => {
         await chatmodel.findOneAndUpdate({ _id: chatId }, { $push: { messages: { role: 'assistant', content: response } } });
 
         // Return the response
-        res.status(200).json({ response, topchunks: contextsTopSimilarityChunks });
+        res.status(200).json({ 
+            response,
+            // return each chunk with the page number
+            topchunks: contextsTopSimilarityChunks ,
+        
+         });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

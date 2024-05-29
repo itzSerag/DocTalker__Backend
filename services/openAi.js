@@ -9,10 +9,9 @@ const OPEN_AI_COMPLETION_MODEL = 'gpt-3.5-turbo';
 exports.getCompletionfromOpenAI = async (prompt) => {
     const completion = await openai.chat.completions.create({
         model: OPEN_AI_COMPLETION_MODEL,
-        temperature: 0.5,
         max_tokens: 500,
         messages: prompt,
-        stream: false, //////  CHANGE THIS TO TRUE
+        stream: false, 
     });
 
     console.log(completion.choices[0].message);

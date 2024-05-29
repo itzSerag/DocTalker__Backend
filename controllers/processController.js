@@ -46,7 +46,7 @@ exports.handler = catchAsync(async (req, res, next) => {
 
             // Convert the document to chunks based on the file type
             const chunks = await convertDocToChunks(file.FileName, file.FileURL, file.FileKey);
-
+            console.log("documentNames",doumentNames)
             const vectors = [];
             // Process each chunk
             await Promise.all(chunks.map(async (chunk) => {

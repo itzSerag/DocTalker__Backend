@@ -31,7 +31,7 @@ const userSchema = new mongoose.Schema(
         // },
         subscription: {
             type: String,
-            enum: ['free', 'gold', 'premium', 'admin'],
+            enum: ['free', 'Gold', 'Premium', 'admin'],
             default: 'free',
             errorMessage: 'Invalid subscription type',
         },

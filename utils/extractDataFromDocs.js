@@ -60,21 +60,6 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
         return documentContent
         
 
-    // } else if (FileName.startsWith('handwritten')) {
-    //     // extract the data from the gemini text by passing the array of url
-    //     // return the text in the image
-
-    //     let text = 'This is a start of page';
-    //     text += (await textAndImage(FileUrl)).toString;
-    //     text += 'This is the end of page';
-
-    //     let documentContent = [{
-    //         pageNumber: null,
-    //         chunk: text,
-    //     }]
-
-    //     return documentContent
-
     } else {
     
 
@@ -85,6 +70,7 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
         }
 
         const documents = await loader.load();
+        console.log('Documents ::: ' + documents[0].metadata);
         const chunksWithPageNumber = [];
 
         for (const document of documents) {
@@ -122,8 +108,14 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
             }
         }
 
-        return chunksWithPageNumber;
+        // i want to return the chunks with the page number and the documents name as array with it
+        // so that i can use the page number to get the page number of the document
+
+
+        return chunksWithPageNumbe;
     }
+
+   
 
 }
 

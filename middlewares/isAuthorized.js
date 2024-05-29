@@ -1,18 +1,25 @@
 const AppError = require('../utils/appError');
-const Payment = require('../models/Payment');
 
 const subscriptions = {
     free: {
         supportedFiles: ['pdf'],
+        queryMax: 50,
+        maxUploadRequest: 5,
     },
-    gold: {
+    Gold: {
         supportedFiles: ['pdf', 'docx', 'txt'],
+        queryMax: 200,
+        maxUploadRequest: 30,
     },
-    premium: {
+    Premium: {
         supportedFiles: ['all'],
+        queryMax: 500,
+        maxUploadRequest: 50,
     },
     admin: {
         supportedFiles: ['all'],
+        queryMax: 10000,
+        maxUploadRequest: 1000,
     },
 };
 
