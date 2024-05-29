@@ -14,7 +14,7 @@ module.exports = async (req , res , next) => {
 
     else{
         // id not found in db -- fake id
-        next(AppError("Not found" , 404))
+        next(new AppError("Not found" , 404))
     }
 
 }

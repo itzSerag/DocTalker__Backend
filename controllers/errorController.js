@@ -1,5 +1,3 @@
-// *  HANDLING ALL OPERTIONAL ERRORS -- NO try catch * //
-
 const AppError = require('../utils/appError');
 
 const handleCastErrorDB = (err) => {
@@ -7,30 +5,39 @@ const handleCastErrorDB = (err) => {
 };
 
 const handleDuplicateFieldsDB = (err) => {
-    const value = err.keyValue.email;
+    const value = Object.values(err.keyValue)[0];
     return new AppError(`Duplicate field value: ${value}. Please use another value!`, 400);
 };
 
-// NOTE -- the error handling middleware has 4 parameters -- this is how express knows that this is an error handling middleware
+const handleValidationErrorDB = (err) => {
+    const errors = Object.values(err.errors).map(el => el.message);
+    const message = `Invalid input data: ${errors.join('. ')}`;
+    return new AppError(message, 400);
+};
+
+const handleJWTError = () => new AppError('Invalid token. Please log in again!', 401);
+
+const handleJWTExpiredError = () => new AppError('Your token has expired! Please log in again.', 401);
+
 module.exports = (err, req, res, next) => {
-    let error = { ...err }; // copy the error object -- shallow copy -- not pointing to the same object
+    let error = { ...err };
+    error.message = err.message;
 
-    console.log(' LOGGING ERROR FROM ERROR CONTROLLER', err);
-    // error handling for the operational error -- 11000 for duplicate error -- > Mongoose error
+    console.log('LOGGING ERROR FROM ERROR CONTROLLER', err);
+
     if (err.name === 'CastError') error = handleCastErrorDB(error);
+    if (err.code === 11000) error = handleDuplicateFieldsDB(error);
+    if (err.name === 'ValidationError') error = handleValidationErrorDB(error);
+    if (err.name === 'JsonWebTokenError') error = handleJWTError();
+    if (err.name === 'TokenExpiredError') error = handleJWTExpiredError();
 
-    if (err.code === 11000) {
-        error = handleDuplicateFieldsDB(error);
-    }
-
-    err.statusCode = err.statusCode || 500;
-    // error status
-    err.status = err.status || 'error';
+    error.statusCode = error.statusCode || 500;
+    error.status = error.status || 'error';
 
     res.status(error.statusCode).json({
         status: error.status + ' from errorController',
         statusCode: error.statusCode,
-        message: error.message, // the message that comes form the err
-        error: err, // the whole error object
+        message: error.message,
+        error: error, // the whole error object
     });
 };
