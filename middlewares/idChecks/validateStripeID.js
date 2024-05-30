@@ -1,5 +1,5 @@
-const paymentMode = require('../models/Payment')
-const AppError = require("../utils/appError")
+const paymentMode = require('../../models/Payment')
+const AppError = require("../../utils/appError")
 
 
 module.exports = async (req , res , next) => {

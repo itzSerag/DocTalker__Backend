@@ -3,6 +3,7 @@ const { fileUpload, folderUpload } = require('../controllers/uploadController');
 const processController = require('../controllers/processController');
 const { upload } = require('../utils/uploadFile');
 const { auth } = require('../middlewares/auth');
+const idChatCheck = require('../middlewares/idChecks/chatCheck');
 const { checkUploadRequest, checkFileType } = require('../middlewares/isAuthorized');
 
 const router = express.Router();
@@ -14,6 +15,6 @@ router.post('/upload', auth, checkUploadRequest, upload.single('file'), checkFil
 router.post('/uploadfolder', auth, checkUploadRequest, upload.array('files'),  folderUpload);
 
 // Handle processing
-router.post('/process', auth, processController.handler);
+router.post('/process', auth, idChatCheck ,processController.handler);
 
 module.exports = router;
