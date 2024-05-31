@@ -60,6 +60,8 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+require('../config/passport')
+
 // Middleware for rate limiting
 app.use('/api', limiter);
 
