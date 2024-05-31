@@ -10,59 +10,66 @@ const userSchema = new mongoose.Schema(
         },
         lastName: {
             type: String,
-            required: true,
+            default: null,
             minlength: [3, 'Minimum name length is 3 characters'],
         },
         email: {
             type: String,
             lowercase: true,
-            required: true,
+
+            validate: [
+                {
+                    validator: function(value) {
+                        // Make email required if googleId is not present
+                        return this.googleId || isEmail(value);
+                    },
+                    message: 'Please enter a valid email',
+                },
+                {
+                    validator: function(value) {
+                        // Ensure email is unique if provided
+                        return !this.googleId || value;
+                    },
+                    message: 'Email is required',
+                },
+            ],
             unique: true,
-            validate: [isEmail, 'Please enter a valid email'],
         },
         password: {
             type: String,
-            required: true,
+
+            required: function() {
+                // Make password required if googleId is not present
+                return !this.googleId;
+            },
             errorMessage: 'Password is required',
         },
-        // googleId: {
-        //     type: String,
-        //     default: null
-        // },
+        googleId: {
+            type: String,
+            default: null,
+        },
         subscription: {
             type: String,
             enum: ['free', 'Gold', 'Premium', 'admin'],
             default: 'free',
             errorMessage: 'Invalid subscription type',
         },
-        // stripeCustomerId: {
-        //     type: String,
-        //     unique: true,
-        // },
-        // check if the user already made the OTP or not
-
         isVerified: {
             type: Boolean,
             default: false,
         },
-
-        // array of chat ids that the user is in
-
         chats: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'Chat',
             },
         ],
-
-        // array of chat ids that the user has starred
         starMessages: [
             {
                 messageID: mongoose.Schema.Types.ObjectId,
                 chatID: mongoose.Schema.Types.ObjectId,
             },
         ],
-
         uploadRequest: {
             type: Number,
             default: 0,
@@ -85,21 +92,20 @@ const userSchema = new mongoose.Schema(
     }
 );
 
-// RESET UPLOAD REQUEST AFTER 24 HOURS  -- 11:59 PM LOCAL TIME
+
 
 // Function to reset the numbers
 userSchema.methods.resetNumbers = function () {
-    userSchema.uploadRequest = 0;
     this.uploadRequest = 0; // Reset uploadRequest
 };
 
 // Middleware to automatically reset numbers before saving
 userSchema.pre('save', async function (next) {
     const now = new Date();
-    console.log('hello from mongo middleware mf');
+
     // Calculate 11:59 pm in the user's local time
     const resetTime = new Date(now);
-    resetTime.setHours(17, 37, 0, 0);
+    resetTime.setHours(23, 59, 0, 0);
 
     // Check if it's past 11:59 pm in the user's local time
     if (now > resetTime) {

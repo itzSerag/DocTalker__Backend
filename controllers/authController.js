@@ -8,6 +8,7 @@ const { generateOTP } = require('../utils/generateOTP');
 const { validateEmail } = require('../utils/emailVaildation');
 const catchAsync = require('../utils/catchAsync');
 const { createS3Folder } = require('../services/aws');
+const passport = require('passport');
 
 // Signup Controller
 exports.signup = catchAsync(async (req, res) => {
@@ -226,3 +227,34 @@ exports.resetPassword = catchAsync(async (req, res) => {
 
 
 });
+
+/// ALL About Google Auth
+exports.googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
+
+exports.googleAuthCallback = (req, res, next) => {
+    passport.authenticate('google', { session: false }, (err, user, info) => {
+      if (err || !user) {
+        return res.redirect('/auth/google/failure');
+      }
+
+      const token = generateToken({ _id: user._id });
+      res.redirect(`/auth/google/success?token=${token}`);
+    })(req, res, next);
+};
+
+exports.googleAuthFailure = (req, res) => {
+    res.status(401).json({ 
+        status: 'fail',
+        message: 'Google authentication failed.'
+     });
+};
+
+exports.googleAuthSuccess = (req, res) => {
+    res.status(200).json({ 
+        status: 'success',
+        message: 'Google authentication successful.',
+        email : req.user.email,
+        token: req.query.token
+     });
+};
+
