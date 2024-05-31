@@ -1,6 +1,8 @@
 const express = require('express');
 const router = express.Router();
 
+const { auth } = require('../middlewares/auth');
+const isUserValid = require('../middlewares/userChecks/isValid');
 
 
 const {
@@ -12,8 +14,6 @@ const {
     unstartMessage,
 } = require('../controllers/chatController');
 
-const { auth } = require('../middlewares/auth');
-
 // TODO : ADD AUTH MIDDLEWARE
 
 // for testing only -- Chat CRUD Operations
@@ -23,7 +23,7 @@ router.get('/', getAllChats);
 router.delete('/:id', deleteChat);
 router.put('/:id', updateChat);
 
-router.post('/star', startMessage);
-router.post('/unstar', unstartMessage);
+router.post('/star', auth , isUserValid,startMessage);
+router.post('/unstar', auth ,isUserValid, unstartMessage);
 
 module.exports = router;

@@ -5,7 +5,7 @@ const { checkUploadRequest, checkFileType } = require('../middlewares/isAuthoriz
 const controller = require('../controllers/handwrittenController');
 const { upload } = require('../utils/uploadFile');
 
-router.post('/uploadpdf', auth, upload.single('file'), controller.uploadHandwrittenPDF);
+router.post('/uploadpdf', auth , checkUploadRequest, upload.single('file'), controller.uploadHandwrittenPDF);
 // router.post('/uploadPic', auth, controller.uploadHandwrittenPic); // Future implementation
 
 module.exports = router;

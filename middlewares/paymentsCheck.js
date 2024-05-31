@@ -1,20 +1,3 @@
-
-// i want to maje obj to contain all data about subscribtions and its prices
-// and check if the user is already subscribed to the same subscribtion
-// and return the error message
-// and if not subscribed to the same subscribtion
-// then return the session url
-// and if the subscribtion is not found
-// then return the error message
-// and if the subscribtion is found
-// then return the session url
-// and if the subscribtion is not found
-// then return the error message
-// and if the subscribtion is found
-// then return the session url
-
-// and to be a middleware
-
 const AppError = require('../utils/appError');
 
 

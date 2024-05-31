@@ -2,15 +2,17 @@ const nodemailer = require('nodemailer');
 
 // Configure nodemailer transporter
 const transporter = nodemailer.createTransport({
-    service: 'Gmail',
-    host: 'smtp.gmail.com',
-    port: 465,
-    secure: true,
+    service: 'hotmail',
+    host: 'smtp-mail.outlook.com',
+    port: 587,
+    secure: false, 
     auth: {
-        // TODO: Update The names to be more secure
         user: process.env.HOTMAIL_EMAIL,
         pass: process.env.HOTMAIL_PASSWORD,
     },
+    tls: {
+        ciphers: 'SSLv3'
+    }
 });
 
 // Function to send OTP email
