@@ -33,7 +33,7 @@ router.post('/resetPassword', auth, controller.resetPassword);
 // Google Auth
 router.get('/auth/google', controller.googleAuth);
 router.get('/auth/google/callback', controller.googleAuthCallback);
-router.get('/auth/google/success', controller.googleAuthRedirect);
+router.get('/auth/google/success', controller.googleAuthSuccess);
 router.get('/auth/google/failure', controller.googleAuthFailure);
 
 module.exports = router;
