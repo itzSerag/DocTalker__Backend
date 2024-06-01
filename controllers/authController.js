@@ -233,12 +233,13 @@ exports.googleAuth = passport.authenticate('google', { scope: ['profile', 'email
 
 exports.googleAuthCallback = (req, res, next) => {
     passport.authenticate('google', { session: false }, (err, user, info) => {
-      if (err || !user) {
-        return res.redirect('/auth/google/failure');
-      }
+        if (err || !user) {
+            return res.redirect('/auth/google/failure');
+        }
 
-      const token = generateToken({ _id: user._id });
-      res.redirect(`/auth/google/success?token=${token}`);
+        console.log(user);
+        const token = generateToken({ _id: user._id });
+        res.redirect(`/api/user/auth/google/success?token=${token}&email=${user.email}&firstName=${user.firstName}`);  // Using query string
     })(req, res, next);
 };
 
@@ -246,15 +247,18 @@ exports.googleAuthFailure = (req, res) => {
     res.status(401).json({ 
         status: 'fail',
         message: 'Google authentication failed.'
-     });
+    });
 };
 
 exports.googleAuthSuccess = (req, res) => {
+    const token = req.query.token;  // Use query parameter
+    const email = req.query.email;
+
     res.status(200).json({ 
         status: 'success',
         message: 'Google authentication successful.',
-        email : req.user.email,
-        token: req.query.token
-     });
+        token,
+        email
+    });
 };
 
