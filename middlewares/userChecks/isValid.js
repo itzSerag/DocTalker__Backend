@@ -6,8 +6,7 @@ const User  = require('../../models/User');
 const AppError = require('../../utils/appError');
 
 module.exports = async (req, res, next) => {
-    const { email } = req.body;
-
+    const { email } = req.user;
     const found = await User.findOne({email});
     if (found) {
         next();
