@@ -7,6 +7,7 @@ const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
 
 exports.getAllChats = catchAsync(async (req, res, next) => {
+
     const { id } = req.user; //User ID
     const user = await User.findById(id);
     if (!user) {
@@ -17,7 +18,9 @@ exports.getAllChats = catchAsync(async (req, res, next) => {
     allChats = allChats.map((chat) => {
         return { id: chat._id, chatName: chat.chatName };
     });
-    res.json(allChats);
+    res.status(200).json({
+        allChats
+    });
 });
 
 // -- > ?
@@ -38,14 +41,19 @@ exports.getChat = catchAsync(async (req, res, next) => {
 
     const document = await Doc.findById(theChat.documentId);
 
-    return res.status(200).json({ status: 'succsess', name, messages, url: document.FileUrl });
+    return res.status(200).json({
+
+        status: 'success', 
+        name,
+        messages,
+        url: document.FileUrl 
+    });
 });
 
 exports.deleteChat = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const { chats } = req.user;
 
-    console.log(chats);
 
     if (!chats.includes(id)) {
         return next(new AppError('cant find the chat', 400));
@@ -56,7 +64,11 @@ exports.deleteChat = catchAsync(async (req, res, next) => {
         $pull: { chats: id },
     });
 
-    res.status(200).json({ status: 'succsess', deleteChat, updatedUser });
+    res.status(200).json({ 
+        status: 'success', 
+        deleteChat, 
+        updatedUser 
+    });
 });
 
 exports.updateChat = catchAsync(async (req, res, next) => {
@@ -106,7 +118,7 @@ exports.startMessage = catchAsync(async (req, res, next) => {
     res.status(200).json({ success: true, message: 'Message starred successfully' });
 });
 
-exports.unstartMessage = catchAsync(async (req, res, next) => {
+exports.unStartMessage = catchAsync(async (req, res, next) => {
     const currUser = req.user;
     console.log(currUser);
 

@@ -55,7 +55,6 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
             chunk: text,
         }]
 
-        console.log(documentContent);
 
         return documentContent
         
@@ -70,7 +69,7 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
         }
 
         const documents = await loader.load();
-        console.log('Documents ::: ' + documents[0].metadata);
+    
         const chunksWithPageNumber = [];
 
         for (const document of documents) {
@@ -89,9 +88,9 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
                 pageNumber = 0
             }
 
-            // supposing 800 is max of one chunk
+            // supposing 600 is max of one chunk
 
-            if (pageContent.trim().length > 800)
+            if (pageContent.trim().length > 600)
             {
                 const chunks = await splitter.splitText(pageContent);
                 chunks.forEach(chunk => {
@@ -112,7 +111,7 @@ exports.convertDocToChunks = async (FileName , FileUrl , FileKey) => {
         // so that i can use the page number to get the page number of the document
 
 
-        return chunksWithPageNumbe;
+        return chunksWithPageNumber;
     }
 
    

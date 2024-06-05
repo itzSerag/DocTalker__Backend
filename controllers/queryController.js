@@ -49,12 +49,10 @@ exports.handler = async (req, res) => {
         
 
         // Build the prompt
-        const languageResponse = 'English'; // Default output language is English
-        const promptStart = `Answer the question based on the context below only , 
-                            if something not in context say i dont know this and answer the rest ,
+        const promptStart = `Answer the question based on the context below ONLY ,
                             NEVER ANSWER SOMETHING NOT IN CONTEXT ,
-                            and answer in detail with ${languageResponse}:\n\n`;
-        const promptEnd = `\n\nQuestion: ${query} \n\nAnswer:`;
+                            and answer in detail:\n\n`;
+        const promptEnd = `\n\nQuestion: ${query} `;
         const prompt = `${promptStart} ${rawTexts} ${promptEnd}`;
 
         console.log('Prompt:', prompt);

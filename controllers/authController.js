@@ -5,10 +5,11 @@ const OTPModel = require('../models/OTP');
 const { generateToken } = require('../utils/generateToken');
 const { sendOTPEmail } = require('../utils/emailUtils');
 const { generateOTP } = require('../utils/generateOTP');
-const { validateEmail } = require('../utils/emailVaildation');
+const { validateEmail } = require('../utils/emailValidation');
 const catchAsync = require('../utils/catchAsync');
 const { createS3Folder } = require('../services/aws');
 const passport = require('passport');
+const AppError = require('../utils/appError')
 
 // Signup Controller
 exports.signup = catchAsync(async (req, res) => {
@@ -118,6 +119,11 @@ exports.resendOtp = catchAsync(async (req, res) => {
         return res.status(400).json({ error: 'User not found.' });
     }
 
+    // delete any existing OTP on this email
+    await OTP.deleteOne({
+        email,
+    });
+
     // Generate and store OTP
     const otp = generateOTP();
     await sendOTPEmail(email, otp);
@@ -135,14 +141,19 @@ exports.resendOtp = catchAsync(async (req, res) => {
 
 
 // Verify OTP Controller
-exports.verifyOtp = catchAsync(async (req, res) => {
+exports.verifyOtp = catchAsync(async (req, res , next) => {
 
     const {email} = req.user;
 
     const otpDocument = await OTPModel.findOne({ email });
 
     if (!otpDocument) {
-        return res.status(400).json({ error: 'No OTP found for the provided email.' });
+        
+        next(new AppError('OTP not found', 404));
+    }
+
+    if (otpDocument.otp !== req.body.otp) {
+        next(new AppError('Invalid OTP', 400));
     }
 
     const user = await User.findOne({ email });
@@ -177,8 +188,9 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     // Get the user based on posted email
     const user = await User.findOne({ email });
     if (!user) {
-        return res.status(404).json({ error: 'Invalid email.' });
+        next(new AppError('There is no user with email address.', 404));
     }
+
 
     const otp = generateOTP();
     await sendOTPEmail(email, otp);
@@ -187,9 +199,44 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
         email,
         otp,
     });
-
     otpDocument.save();
-    res.status(200).json({ status: 'OTP sent successfully.' });
+
+
+    res.status(200).json({ status: 'success' });
+});
+
+exports.setNewPassword = catchAsync(async (req, res, next) => {
+
+
+    // after the user verifed the otp
+    const { email, newPassword , otp} = req.body;
+
+    const user = await User.findOne({ email });
+    if (!user) {
+        next(new AppError('Invalid email. Or user not found', 404));
+    }
+
+    const otpDocument = await OTPModel.findOne({ email});
+
+    if (!otpDocument || otpDocument.otp !== otp) {
+        next(new AppError('Invalid OTP', 404));
+    }
+
+    if(otp == otpDocument.otp) {
+
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        user.password = hashedPassword;
+
+        await user.save();
+    }
+
+    res.status(200).json({
+        status: 'success',
+        message: 'Password updated successfully.',
+    });
 });
 
 
@@ -201,8 +248,7 @@ exports.resetPassword = catchAsync(async (req, res) => {
 
     const user = await User.findOne({ email});
     if (!user) {
-        return res.status(404).json({ error: 'Invalid email. Or user not found' });
-
+        next(new AppError( 'Invalid email. Or user not found' , 404));
     }
 
     const isMatch = bcrypt.compareSync(oldPassword, user.password);
@@ -222,11 +268,12 @@ exports.resetPassword = catchAsync(async (req, res) => {
 
     res.status(200).json({ 
         status: 'success',
-        message : "password resset successfully"
+        message : "password reset successfully"
      });
 
-
 });
+
+
 
 /// ALL About Google Auth
 exports.googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { auth } = require('../middlewares/auth');
-const { checkUploadRequest, checkFileType } = require('../middlewares/isAuthorized');
+const { checkUploadRequest} = require('../middlewares/isAuthorized');
 const controller = require('../controllers/handwrittenController');
 const { upload } = require('../utils/uploadFile');
 

@@ -46,23 +46,25 @@ exports.handler = catchAsync(async (req, res, next) => {
 
             // Convert the document to chunks based on the file type
             const chunks = await convertDocToChunks(file.FileName, file.FileURL, file.FileKey);
-            console.log("documentNames",doumentNames)
+           
+            console.log(chunks[0])
             const vectors = [];
-            // Process each chunk
-            await Promise.all(chunks.map(async (chunk) => {
-                // Get embeddings for the chunk
+           
+            for (const chunk of chunks) {
+
+                
                 const embedding = await getEmbeddings(chunk.chunk);
-                // Store chunk data
                 vectors.push({
                     rawText: chunk.chunk,
                     embeddings: embedding,
                     pageNumber: chunk.pageNumber || null, // Use null if page number is not available
                 });
-            }));
+            };
 
             // Update file object with processed chunks
             file.Chunks = vectors;
             file.isProcessed = true;
+
 
         } catch (error) {
             // Handle errors gracefully

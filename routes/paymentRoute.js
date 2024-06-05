@@ -8,8 +8,8 @@ const router = express.Router();
 
 // Process a payment
 router.post('/process-payment',auth , isUserValid,paymentCheck, controller.createCheckoutSession);
-router.get('/success', idCheck , isUserValid,controller.paymentSuccess);
-router.get('/cancel' , idCheck ,isUserValid,controller.paymentCancel);
+router.get('/success', idCheck  ,controller.paymentSuccess);
+router.get('/cancel' , idCheck ,controller.paymentCancel);
 
 
 module.exports = router;
