@@ -3,7 +3,6 @@ const Chat = require('../models/Chat');
 const Doc = require('../models/Document');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
-
 const mongoose = require('mongoose');
 
 exports.getAllChats = catchAsync(async (req, res, next) => {
@@ -50,6 +49,7 @@ exports.getChat = catchAsync(async (req, res, next) => {
     });
 });
 
+
 exports.deleteChat = catchAsync(async (req, res, next) => {
     const { id } = req.params;
     const { chats } = req.user;
@@ -60,7 +60,7 @@ exports.deleteChat = catchAsync(async (req, res, next) => {
     }
 
     const deleteChat = await chatModel.findByIdAndDelete(id);
-    const updatedUser = await userModel.findByIdAndUpdate(user._id, {
+    const updatedUser = await userModel.findByIdAndUpdate(req.user._id, {
         $pull: { chats: id },
     });
 
@@ -74,25 +74,28 @@ exports.deleteChat = catchAsync(async (req, res, next) => {
 exports.updateChat = catchAsync(async (req, res, next) => {
     const { chatId } = req.body;
     const { chatName } = req.body;
-    await chatModel.findByIdAndUpdate({ _id: id }, { $set: { chatName } }, { new: true });
+    await chatModel.findByIdAndUpdate({ _id: chatId }, { $set: { chatName } });
 
-    return res.json({ status: 'succsess', message: 'Chat Name Updated Successfully' });
+    return res.json({ 
+        status: 'success',
+        message: 'Chat Name Updated Successfully'
+     });
 });
 
-// Import Mongoose
 
 // Define the startMessage handler
-exports.startMessage = catchAsync(async (req, res, next) => {
-    const currUser = req.user;
-    console.log(currUser);
+exports.starMessage = catchAsync(async (req, res, next) => {
+    
+    // !! NEEDS SO MUCH OPTIMIZATION 
 
+    const currUser = req.user;
     const userId = currUser._id;
     const { chatId, messageId } = req.body;
 
     // Find the user by ID
     const user = await User.findById(userId);
     if (!user) {
-        return res.status(404).json({ success: false, message: 'User not found' });
+        return
     }
 
     // Find the chat by ID
@@ -118,10 +121,8 @@ exports.startMessage = catchAsync(async (req, res, next) => {
     res.status(200).json({ success: true, message: 'Message starred successfully' });
 });
 
-exports.unStartMessage = catchAsync(async (req, res, next) => {
+exports.unStarMessage = catchAsync(async (req, res, next) => {
     const currUser = req.user;
-    console.log(currUser);
-
     const userId = currUser._id;
     const { chatId, messageId } = req.body;
 

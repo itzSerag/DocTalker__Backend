@@ -10,8 +10,8 @@ const {
     getChat,
     deleteChat,
     updateChat,
-    startMessage,
-    unstartMessage,
+    starMessage,
+    unStarMessage,
 } = require('../controllers/chatController');
 
 // TODO : ADD AUTH MIDDLEWARE
@@ -23,7 +23,7 @@ router.get('/', getAllChats);
 router.delete('/:id', deleteChat);
 router.put('/:id', updateChat);
 
-router.post('/star', auth , isUserValid,startMessage);
-router.post('/unstar', auth ,isUserValid, unstartMessage);
+router.post('/star', auth , isUserValid,starMessage);
+router.post('/unStar', auth ,isUserValid, unStarMessage);
 
 module.exports = router;
