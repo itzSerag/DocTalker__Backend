@@ -49,10 +49,10 @@ exports.uploadFile = async (fileKey = '', fileBody = '', fileType = '', folderNa
 
     let data = await upload.done();
 
-    return{
-        Location : data.Location ,
-        Key : data.Key
-    } 
+    return {
+        Location: data.Location,
+        Key: data.Key,
+    };
 };
 
 exports.deleteFile = async (fileKey) => {
@@ -74,18 +74,16 @@ exports.listAllObjects = async (Bucket, Prefix) => {
 exports.uploadFolder = async (files, userID, folderName) => {
     folderName = userID + '/' + folderName + '/';
     let dataLocation = [];
-    let dataKeys = []
+    let dataKeys = [];
 
     // upload the files to the folder
 
     // !! MUST MAKE CHANGES FOR FOLDER OF FILES
     for (const file of files) {
-        const location = await module.exports.uploadFile(file.originalname, file.buffer, file.mimetype, folderName)
+        const location = await module.exports.uploadFile(file.originalname, file.buffer, file.mimetype, folderName);
         dataLocation.push(location.Location);
         dataKeys.push(location.Key);
     }
 
-    return [
-        [dataLocation] , [dataKeys]
-    ]
+    return [[dataLocation], [dataKeys]];
 };

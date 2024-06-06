@@ -60,7 +60,7 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-require('../config/passport')
+require('../config/passport');
 
 // Middleware for rate limiting
 app.use('/api', limiter);
@@ -93,10 +93,7 @@ app.use('/api/test', testRoutes);
 // SUPER PREMIUM ROUTES
 app.use('/api/handwritten', handwrittenRoutes);
 
-
-
 //TEST PAYMENT succesful
-
 
 // Error handling middleware -- 404 not found -- all for other routes and request methods
 app.all('*', (req, res, next) => {

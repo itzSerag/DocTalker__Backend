@@ -55,13 +55,11 @@ exports.fileUpload = catchAsync(async (req, res, next) => {
         });
     } catch (err) {
         await session.abortTransaction();
-        return next(err);
+        return next(new AppError(err.message, 400));
     } finally {
         session.endSession();
     }
 });
-
-
 
 exports.folderUpload = catchAsync(async (req, res, next) => {
     let session;
@@ -80,10 +78,10 @@ exports.folderUpload = catchAsync(async (req, res, next) => {
         }
         const uploadFolderNameWithUserId = currUser._id.toString();
 
-        const [Locations , Keys] = await uploadFolder(files, uploadFolderNameWithUserId, folderName);
+        const [Locations, Keys] = await uploadFolder(files, uploadFolderNameWithUserId, folderName);
 
-        console.log(Keys , Locations);
-        
+        console.log(Keys, Locations);
+
         const folder = new Doc({
             FileName: folderName,
             Files: files.map((file) => ({
@@ -116,9 +114,8 @@ exports.folderUpload = catchAsync(async (req, res, next) => {
         });
     } catch (err) {
         await session.abortTransaction();
-        return next(err);
+        return next(new AppError(err.message, 400));
     } finally {
         session.endSession();
     }
 });
-

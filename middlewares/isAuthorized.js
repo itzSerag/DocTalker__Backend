@@ -27,7 +27,7 @@ exports.checkSubscription = () => {
     return (req, res, next) => {
         const { subscription } = req.user;
         if (!subscription || !subscriptions[subscription]) {
-            return next(new AppError('Invalid subscription type or not found', 400));
+            next(new AppError('Invalid subscription type or not found', 400));
         }
 
         // if user subscription is ended and not renewed -- > make the user free
@@ -36,12 +36,12 @@ exports.checkSubscription = () => {
         }
 
         if (subscription === 'premium' || subscription === 'admin') {
-            return next(); // they both have unlimited access
+            next(); // they both have unlimited access
         }
-        return next(new AppError('You are not authorized to access this resource', 403));
+
+        next(new AppError('You are not authorized to access this resource', 403));
     };
 };
-
 
 exports.checkUploadRequest = (req, res, next) => {
     const { subscription } = req.user;
@@ -49,10 +49,9 @@ exports.checkUploadRequest = (req, res, next) => {
     if (req.user.uploadRequest < maxUploadRequest) {
         next();
     } else {
-        return next(new AppError('You have reached your upload limit of Uploading', 403));
+        next(new AppError('You have reached your upload limit of Uploading', 403));
     }
 };
-
 
 exports.checkQueryRequest = (req, res, next) => {
     const { subscription } = req.user;
@@ -63,7 +62,6 @@ exports.checkQueryRequest = (req, res, next) => {
         return next(new AppError('You have reached your query limit of Uploading', 403));
     }
 };
-
 
 exports.checkFileType = (req, res, next) => {
     let files = [];
@@ -99,4 +97,3 @@ exports.checkFileType = (req, res, next) => {
     }
     next();
 };
-

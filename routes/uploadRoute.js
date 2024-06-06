@@ -10,10 +10,10 @@ const isUserValid = require('../middlewares/userChecks/isValid');
 const router = express.Router();
 
 // Handle single file upload
-router.post('/upload', auth, isUserValid , checkUploadRequest, upload.single('file'), checkFileType, fileUpload);
+router.post('/upload', auth, isUserValid, checkUploadRequest, upload.single('file'), checkFileType, fileUpload);
 
 // Handle folder upload
-router.post('/uploadfolder', auth,isUserValid,checkUploadRequest, upload.array('files'),  folderUpload);
+router.post('/uploadfolder', auth, isUserValid, checkUploadRequest, upload.array('files'), folderUpload);
 
 // Handle processing
 router.post('/process', auth, isUserValid, processController.handler);

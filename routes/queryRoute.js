@@ -5,8 +5,7 @@ const idChatCheck = require('../middlewares/idChecks/chatCheck'); // Update the 
 const isUserValid = require('../middlewares/userChecks/isValid');
 const router = express.Router();
 
-
 // process the query coming from the user
-router.post('/query-process', auth, isUserValid,idChatCheck, queryController.handler);
+router.post('/query-process', auth, isUserValid, idChatCheck, queryController.handler);
 
 module.exports = router;

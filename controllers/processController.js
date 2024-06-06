@@ -8,8 +8,6 @@ const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
 
 exports.handler = catchAsync(async (req, res, next) => {
-
-
     if (req.method !== 'POST') {
         return res.status(400).json({ message: 'HTTP method not allowed' });
     }
@@ -38,41 +36,34 @@ exports.handler = catchAsync(async (req, res, next) => {
             return next(new AppError('Document has already been processed', 400));
         }
 
-
         // Assuming Files is an array of file objects
-    for (const file of document.Files) {
+        for (const file of document.Files) {
+            try {
+                // Convert the document to chunks based on the file type
+                const chunks = await convertDocToChunks(file.FileName, file.FileURL, file.FileKey);
 
-        try {
+                console.log(chunks[0]);
+                const vectors = [];
 
-            // Convert the document to chunks based on the file type
-            const chunks = await convertDocToChunks(file.FileName, file.FileURL, file.FileKey);
-           
-            console.log(chunks[0])
-            const vectors = [];
-           
-            for (const chunk of chunks) {
+                for (const chunk of chunks) {
+                    const embedding = await getEmbeddings(chunk.chunk);
+                    vectors.push({
+                        rawText: chunk.chunk,
+                        embeddings: embedding,
+                        pageNumber: chunk.pageNumber || null, // Use null if page number is not available
+                        fileName: chunk.fileName,
+                    });
+                }
 
-                
-                const embedding = await getEmbeddings(chunk.chunk);
-                vectors.push({
-                    rawText: chunk.chunk,
-                    embeddings: embedding,
-                    pageNumber: chunk.pageNumber || null, // Use null if page number is not available
-                });
-            };
-
-            // Update file object with processed chunks
-            file.Chunks = vectors;
-            file.isProcessed = true;
-
-
-        } catch (error) {
-            // Handle errors gracefully
-            console.error(`Error processing file ${file.FileName}: ${error.message}`);
+                // Update file object with processed chunks
+                file.Chunks = vectors;
+                file.isProcessed = true;
+            } catch (error) {
+                // Handle errors gracefully
+                console.error(`Error processing file ${file.FileName}: ${error.message}`);
+                next(new AppError(`Error processing file ${file.FileName}: ${error.message}`, 400));
+            }
         }
-    }
-
-
 
         await document.save({ session: session });
 
@@ -92,13 +83,10 @@ exports.handler = catchAsync(async (req, res, next) => {
 
         await session.commitTransaction();
 
-
         return res.status(200).json({
             status: 'success',
             message: 'Document processed and uploaded to MongoDB successfully',
         });
-
-        
     } catch (error) {
         console.error(error);
         await session.abortTransaction();

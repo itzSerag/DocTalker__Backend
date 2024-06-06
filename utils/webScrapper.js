@@ -1,11 +1,10 @@
 const axios = require('axios');
 const cheerio = require('cheerio');
-const minify = require("string-minify");
+const minify = require('string-minify');
 
 // extract text from webpage
 
-
-exports.scrapeWebpage = async (url) =>{
+exports.scrapeWebpage = async (url) => {
     try {
         const response = await axios.get(url);
         const $ = cheerio.load(response.data);
@@ -21,11 +20,9 @@ exports.scrapeWebpage = async (url) =>{
         // Minify the text
         text = minify(text);
 
-        
         return text;
     } catch (error) {
         console.error('Error fetching webpage:', error);
         throw new Error('Failed to fetch webpage');
     }
-}
-
+};

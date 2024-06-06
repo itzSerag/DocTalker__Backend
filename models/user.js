@@ -19,14 +19,14 @@ const userSchema = new mongoose.Schema(
 
             validate: [
                 {
-                    validator: function(value) {
+                    validator: function (value) {
                         // Make email required if googleId is not present
                         return this.googleId || isEmail(value);
                     },
                     message: 'Please enter a valid email',
                 },
                 {
-                    validator: function(value) {
+                    validator: function (value) {
                         // Ensure email is unique if provided
                         return !this.googleId || value;
                     },
@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema(
         password: {
             type: String,
 
-            required: function() {
+            required: function () {
                 // Make password required if googleId is not present
                 return !this.googleId;
             },
@@ -91,8 +91,6 @@ const userSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
-
-
 
 // Function to reset the numbers
 userSchema.methods.resetNumbers = function () {

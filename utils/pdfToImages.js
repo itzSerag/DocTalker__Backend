@@ -1,4 +1,4 @@
-const docToImg = require('pdf-img-convert'); 
+const docToImg = require('pdf-img-convert');
 const axios = require('axios');
 
 // Function to generate images from a Word document hosted on S3 and return an array of pages' bodies

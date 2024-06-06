@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const catchAsync = require('../utils/catchAsync');
-const AppError = require('../utils/appError');
 
 // TODO : APPLY AppError and catchAsync
 
@@ -18,3 +17,13 @@ exports.deleteUser = catchAsync(async (req, res) => {
     await User.findByIdAndDelete(id);
     res.status(200).json({ message: 'User deleted successfully' });
 });
+
+exports.me = catchAsync(async (req, res) => {
+    const { _id: id } = req.user;
+
+    const user = await User.findById(id).select('-password');
+    res.status(200).json({ 
+        status : 'success' ,
+        user
+     });
+})

@@ -1,9 +1,8 @@
 const AppError = require('../utils/appError');
 
-
 const subscriptions = {
     Premium: 49,
-    Gold: 29
+    Gold: 29,
 };
 
 module.exports = (req, res, next) => {
@@ -23,10 +22,8 @@ module.exports = (req, res, next) => {
 
     // check if the user wants to subscribe to a less expensive plan
     if (subscriptions[name] < subscriptions[req.user.subscription]) {
-        return next(new AppError( `You are already subscribed to a more expensive plan`, 400));
+        return next(new AppError(`You are already subscribed to a more expensive plan`, 400));
     }
-
-
 
     req.price = subscriptions[name];
     req.productName = name;

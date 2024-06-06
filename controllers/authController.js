@@ -9,7 +9,7 @@ const { validateEmail } = require('../utils/emailValidation');
 const catchAsync = require('../utils/catchAsync');
 const { createS3Folder } = require('../services/aws');
 const passport = require('passport');
-const AppError = require('../utils/appError')
+const AppError = require('../utils/appError');
 
 // Signup Controller
 exports.signup = catchAsync(async (req, res) => {
@@ -101,9 +101,6 @@ exports.login = catchAsync(async (req, res) => {
     });
 });
 
-
-
-
 // Resend OTP Controller
 exports.resendOtp = catchAsync(async (req, res) => {
     const { email } = req.body;
@@ -138,17 +135,13 @@ exports.resendOtp = catchAsync(async (req, res) => {
     res.status(200).json({ message: 'OTP sent successfully.' });
 });
 
-
-
 // Verify OTP Controller
-exports.verifyOtp = catchAsync(async (req, res , next) => {
-
-    const {email} = req.user;
+exports.verifyOtp = catchAsync(async (req, res, next) => {
+    const { email } = req.user;
 
     const otpDocument = await OTPModel.findOne({ email });
 
     if (!otpDocument) {
-        
         next(new AppError('OTP not found', 404));
     }
 
@@ -172,15 +165,10 @@ exports.verifyOtp = catchAsync(async (req, res , next) => {
     });
 });
 
-
-
-
 exports.logOut = (req, res) => {
     res.cookie('jwt', '', { maxAge: 1 });
     res.redirect('/');
 };
-
-
 
 exports.forgetPassword = catchAsync(async (req, res, next) => {
     const { email } = req.body;
@@ -191,7 +179,6 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
         next(new AppError('There is no user with email address.', 404));
     }
 
-
     const otp = generateOTP();
     await sendOTPEmail(email, otp);
 
@@ -201,29 +188,25 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     });
     otpDocument.save();
 
-
     res.status(200).json({ status: 'success' });
 });
 
 exports.setNewPassword = catchAsync(async (req, res, next) => {
-
-
     // after the user verifed the otp
-    const { email, newPassword , otp} = req.body;
+    const { email, newPassword, otp } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
         next(new AppError('Invalid email. Or user not found', 404));
     }
 
-    const otpDocument = await OTPModel.findOne({ email});
+    const otpDocument = await OTPModel.findOne({ email });
 
     if (!otpDocument || otpDocument.otp !== otp) {
         next(new AppError('Invalid OTP', 404));
     }
 
-    if(otp == otpDocument.otp) {
-
+    if (otp == otpDocument.otp) {
         // Hash the password
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(newPassword, salt);
@@ -239,16 +222,13 @@ exports.setNewPassword = catchAsync(async (req, res, next) => {
     });
 });
 
-
-
 exports.resetPassword = catchAsync(async (req, res) => {
-
     // get the old password and compare it with the new password
-    const {email , oldPassword, newPassword} = req.body;
+    const { email, oldPassword, newPassword } = req.body;
 
-    const user = await User.findOne({ email});
+    const user = await User.findOne({ email });
     if (!user) {
-        next(new AppError( 'Invalid email. Or user not found' , 404));
+        next(new AppError('Invalid email. Or user not found', 404));
     }
 
     const isMatch = bcrypt.compareSync(oldPassword, user.password);
@@ -266,14 +246,11 @@ exports.resetPassword = catchAsync(async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ 
+    res.status(200).json({
         status: 'success',
-        message : "password reset successfully"
-     });
-
+        message: 'password reset successfully',
+    });
 });
-
-
 
 /// ALL About Google Auth
 exports.googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
@@ -286,26 +263,25 @@ exports.googleAuthCallback = (req, res, next) => {
 
         console.log(user);
         const token = generateToken({ _id: user._id });
-        res.redirect(`/api/user/auth/google/success?token=${token}&email=${user.email}&firstName=${user.firstName}`);  // Using query string
+        res.redirect(`/api/user/auth/google/success?token=${token}&email=${user.email}&firstName=${user.firstName}`); // Using query string
     })(req, res, next);
 };
 
 exports.googleAuthFailure = (req, res) => {
-    res.status(401).json({ 
+    res.status(401).json({
         status: 'fail',
-        message: 'Google authentication failed.'
+        message: 'Google authentication failed.',
     });
 };
 
 exports.googleAuthSuccess = (req, res) => {
-    const token = req.query.token;  // Use query parameter
+    const token = req.query.token; // Use query parameter
     const email = req.query.email;
 
-    res.status(200).json({ 
+    res.status(200).json({
         status: 'success',
         message: 'Google authentication successful.',
         token,
-        email
+        email,
     });
 };
-

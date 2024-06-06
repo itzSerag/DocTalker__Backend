@@ -3,9 +3,7 @@ const { generateImagesFromS3Doc } = require('../utils/pdfToImages');
 const Doc = require('../models/Document');
 const Chat = require('../models/Chat');
 
-
 exports.uploadHandwrittenPDF = async (req, res, next) => {
-
     try {
         // Validate incoming request payload
         const file = req.file;
@@ -57,8 +55,6 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
         // Update user upload count
         currUser.uploadRequest += ArrayImages.length;
         await currUser.save();
-
-    
 
         // Send success response
         res.status(200).json({

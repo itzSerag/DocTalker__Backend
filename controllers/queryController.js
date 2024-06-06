@@ -1,85 +1,80 @@
 const { getCompletion } = require('../utils/getCompletion');
 const { getEmbeddings } = require('../services/huggingface');
 const { connectDB } = require('../config/database');
-const Doc = require('../models/Document'); // Importing the Document model
+const Doc = require('../models/Document');
 const { cosineSimilarity } = require('../utils/cosineSimilarity');
 const chatmodel = require('../models/Chat');
-
-let chathistory = [];
+const mongoose = require('mongoose');
 
 exports.handler = async (req, res) => {
+
+
     try {
-        
         const { query, chatId, modelType } = req.body;
+        const currUser = req.body
 
         await connectDB();
 
         // Update chat history and retrieve updated history
-        await chatmodel.findOneAndUpdate({ _id: chatId }, { $push: { messages: { role: 'user', content: query } } });
-        const updatedChat = await chatmodel.findById(chatId);
-        const chathistory = updatedChat.messages.map((chat) => ({ role: chat.role, content: chat.content, modelType }));
+        const updatedChat = await chatmodel.findOneAndUpdate(
+            { _id: chatId },
+            { $push: { messages: { role: 'user', content: query } } },
+            { new: true }
+        );
+        const chatHistory = updatedChat.messages.map((chat) => ({ role: chat.role, content: chat.content, modelType }));
 
         // Find the document by ID
-        const file = await chatmodel.findById(chatId);
-        const theDocument = await Doc.findById(file.documentId);
+        const document = await Doc.findById(updatedChat.documentId);
 
         // Calculate similarity between query and chunks
-        const similarityResults = [];
-        const queryEmb = await getEmbeddings(query);
+        const queryEmbeddings = await getEmbeddings(query);
+        const similarityResults = document.Files.flatMap((file) =>
+            file.Chunks.map((chunk) => ({
+                chunk,
+                similarity:  cosineSimilarity(queryEmbeddings, chunk.embeddings),
+            }))
+        );
 
-        for (const file of theDocument.Files) {
-            for (const chunk of file.Chunks) {
-                const similarity = cosineSimilarity(queryEmb, chunk.embeddings);
-                similarityResults.push({ chunk, similarity });
-            }
-        }
-
-        // Choose top three chunks with highest similarity
+        // Choose top five chunks with highest similarity
         similarityResults.sort((a, b) => b.similarity - a.similarity);
-
-        // return that top 3 chunks with the page number
-        const contextsTopSimilarityChunks = similarityResults.slice(0, 5).map((result) => ({
+        const topSimilarityChunks = similarityResults.slice(0, 5).map((result) => ({
             rawText: result.chunk.rawText,
-            pageNumber: result.chunk.pageNumber
+            pageNumber: result.chunk.pageNumber,
         }));
-        
-        // thats what we pass to prompet
-        const rawTexts = contextsTopSimilarityChunks.map(chunk => chunk.rawText).join(' ');
-
-        
 
         // Build the prompt
-        const promptStart = `Answer the question based on the context below ONLY ,
-                            NEVER ANSWER SOMETHING NOT IN CONTEXT ,
-                            and answer in detail:\n\n`;
-        const promptEnd = `\n\nQuestion: ${query} `;
-        const prompt = `${promptStart} ${rawTexts} ${promptEnd}`;
+        const promptStart = `You are a helpful bot answers the questions based on the given text ,
+                                Answer the question based on the context below ONLY,
+                                NEVER ANSWER SOMETHING NOT IN CONTEXT, and answer in detail:\n\n`;
+        const promptEnd = `\n\nQuestion: ${query}`;
+        const rawTexts = topSimilarityChunks.map((chunk) => chunk.rawText).join(' ');
+        const prompt = `${promptStart}${rawTexts}${promptEnd}`;
 
-        console.log('Prompt:', prompt);
-
-        chathistory.push({ role: 'user', content: prompt });
+        chatHistory.push({ role: 'user', content: prompt });
 
         // Get completion from the model
         let response;
-
-        if (modelType === 'openai') {
-            response = await getCompletion(chathistory, modelType);
-        } else if (modelType === 'gemini-text') {
-            response = await getCompletion(prompt, modelType);
+        if (modelType === 'openai' || modelType === 'gemini-text') {
+            response = await getCompletion(chatHistory, modelType);
         } else {
             throw new Error('Invalid model type');
         }
 
         // Update chat model with assistant response
-        await chatmodel.findOneAndUpdate({ _id: chatId }, { $push: { messages: { role: 'assistant', content: response } } });
+        await chatmodel.findOneAndUpdate(
+            { _id: chatId },
+            { $push: { messages: { role: 'assistant', content: response } } }
+        );
+
+        // add a query to the user
+        currUser.queryRequest = currUser.queryRequest + 1;
+        await currUser.save();
 
         // Return the response
-        res.status(200).json({ 
+        res.status(200).json({
             response,
-            // return each chunk with the page number
-            topchunks: contextsTopSimilarityChunks ,
-        
-         });
+            topChunks: topSimilarityChunks,
+        });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

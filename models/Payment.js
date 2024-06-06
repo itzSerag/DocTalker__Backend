@@ -21,8 +21,7 @@ const paymentSchema = new mongoose.Schema({
         required: true,
     },
 
-    subscription_Expires_Date :{
-
+    subscription_Expires_Date: {
         type: Date,
         default: null,
     },

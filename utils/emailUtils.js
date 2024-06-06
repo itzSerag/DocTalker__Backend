@@ -5,14 +5,14 @@ const transporter = nodemailer.createTransport({
     service: 'hotmail',
     host: 'smtp-mail.outlook.com',
     port: 587,
-    secure: false, 
+    secure: false,
     auth: {
         user: process.env.HOTMAIL_EMAIL,
         pass: process.env.HOTMAIL_PASSWORD,
     },
     tls: {
-        ciphers: 'SSLv3'
-    }
+        ciphers: 'SSLv3',
+    },
 });
 
 // Function to send OTP email

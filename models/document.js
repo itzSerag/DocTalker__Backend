@@ -28,14 +28,15 @@ const documentSchema = new mongoose.Schema(
                             type: String,
                         },
                         embeddings: [Number],
-                        
+
                         pageNumber: {
                             type: Number,
                             default: null,
                         },
-
+                        fileName: {
+                            type: String,
+                        },
                     },
-
                 ],
                 isProcessed: {
                     type: Boolean,

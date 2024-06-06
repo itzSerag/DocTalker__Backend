@@ -1,10 +1,8 @@
 const axios = require('axios');
 const mime = require('mime-types');
 
-
 async function urlToGenerativePart(url) {
     try {
-
         // Make a GET request to the image URL
         const response = await axios.get(url, { responseType: 'arraybuffer' });
 

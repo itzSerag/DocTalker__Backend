@@ -5,6 +5,6 @@ const { auth } = require('../middlewares/auth');
 const isUserValid = require('../middlewares/userChecks/isValid');
 
 // extract a text from a webpage
-router.post('/extract-content', auth, isUserValid,controller.extractContent);
+router.post('/extract-content', auth, isUserValid, controller.extractContent);
 
 module.exports = router;

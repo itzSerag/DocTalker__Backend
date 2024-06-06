@@ -32,7 +32,7 @@ const config = {
                 threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
             },
             {
-                category: HarmCategory.HARM_CATEGORY_HARASSMENT, 
+                category: HarmCategory.HARM_CATEGORY_HARASSMENT,
                 threshold: HarmBlockThreshold.BLOCK_ONLY_HIGH,
             },
         ],
@@ -52,7 +52,7 @@ exports.textOnly = async (prompt) => {
     try {
         const result = await model.generateContent(prompt);
 
-        return result.response.text()
+        return result.response.text();
     } catch (error) {
         console.error('textOnly | error', error);
         return { Error: 'Caught error while fetching AI response' };

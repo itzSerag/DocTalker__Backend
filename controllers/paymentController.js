@@ -10,22 +10,24 @@ exports.createCheckoutSession = async (req, res) => {
         const session = await stripe.checkout.sessions.create({
             payment_method_types: ['card'], // only card payments for now
             client_reference_id: currUser._id,
-            line_items: [{
-                price_data: {
-                    currency: 'usd', // USD for now
-                    product_data: {
-                        name: name + " Subscription",
+            line_items: [
+                {
+                    price_data: {
+                        currency: 'usd', // USD for now
+                        product_data: {
+                            name: name + ' Subscription',
+                        },
+                        unit_amount: price * 100, // in cents
                     },
-                    unit_amount: price * 100, // in cents  
+                    quantity: 1,
                 },
-                quantity: 1,
-            }],
+            ],
             customer_email: currUser.email,
             metadata: {
                 subscription_name: name,
             },
             mode: 'payment',
-            success_url: "http://localhost:5000/api/payment/success?id={CHECKOUT_SESSION_ID}",
+            success_url: 'http://localhost:5000/api/payment/success?id={CHECKOUT_SESSION_ID}',
             cancel_url: 'http://localhost:5000/api/payment/cancel?id={CHECKOUT_SESSION_ID}',
         });
 
@@ -45,8 +47,6 @@ exports.createCheckoutSession = async (req, res) => {
     }
 };
 
-
-
 exports.paymentSuccess = async (req, res) => {
     const { id } = req.query;
 
@@ -57,11 +57,9 @@ exports.paymentSuccess = async (req, res) => {
         const payment = await PaymentModel.findOne({ session_id: id }).populate('user');
         // now payment can access user data using payment.user
 
-        
         if (!payment) {
             return res.status(404).json({ error: 'Payment not found' });
         }
-
 
         let queryMax = 0;
         let maxUploadRequest = 0;
@@ -72,7 +70,6 @@ exports.paymentSuccess = async (req, res) => {
             maxUploadRequest = 30;
             // set the subscription expires date after 30 days from now
             payment.subscription_Expires_Date = new Date(Date.now() + 31 * 24 * 60 * 60 * 1000);
-
         } else if (subscription === 'Premium') {
             queryMax = 500;
             maxUploadRequest = 50;
@@ -82,18 +79,20 @@ exports.paymentSuccess = async (req, res) => {
 
         await payment.save();
 
-        await User.updateOne({ _id: payment.user._id }, {
-            $set: {
-                subscription,
-                queryMax,
-                maxUploadRequest
+        await User.updateOne(
+            { _id: payment.user._id },
+            {
+                $set: {
+                    subscription,
+                    queryMax,
+                    maxUploadRequest,
+                },
             }
-        });
+        );
 
         res.json({
-            status: "success",
+            status: 'success',
             message: 'Payment successful',
-
         });
     } catch (error) {
         console.error('Error handling payment success:', error);
@@ -101,10 +100,9 @@ exports.paymentSuccess = async (req, res) => {
     }
 };
 
-
 exports.paymentCancel = async (req, res) => {
     res.json({
-        status: "failed",
+        status: 'failed',
         message: 'Payment failed',
     });
 };

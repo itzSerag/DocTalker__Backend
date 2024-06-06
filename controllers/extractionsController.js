@@ -8,7 +8,6 @@ const Document = require('../models/Document');
 const chatModel = require('../models/Chat');
 const slugify = require('slugify');
 
-
 const makeTextFile = (text, fileName) => {
     const filePath = `./temp/${fileName + '_'}${Date.now()}.txt`;
     fs.writeFileSync(filePath, text, 'utf-8');
