@@ -1,12 +1,8 @@
 const express = require('express');
 const router = express.Router();
-const { deleteUser, updateUser, getMe } = require('../controllers/userController');
+const { deleteUser, updateUser, me } = require('../controllers/userController');
 const { auth } = require('../middlewares/auth');
 const controller = require('../controllers/authController');
-
-function isLoggedIn(req, res, next) {
-    require.user ? next() : res.sendStatus(401);
-}
 
 // public routes
 router.post('/login', controller.login);
@@ -14,11 +10,10 @@ router.post('/signup', controller.signup);
 
 router.delete('/', auth, deleteUser);
 router.put('/', auth, updateUser);
-router.get('/me', auth, getMe);
 router.get('/verifyToken', auth, (req, res) => {
     res.status(200).json({ message: 'Token is valid' });
 });
-router.get('/me' , auth, controller.me);
+router.get('/me', auth, me);
 
 //TODO OTP AUTH
 router.post('/otp/verify', auth, controller.verifyOtp);
