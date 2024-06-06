@@ -18,6 +18,13 @@ exports.deleteUser = catchAsync(async (req, res) => {
     res.status(200).json({ message: 'User deleted successfully' });
 });
 
+exports.getMe = catchAsync(async (req, res) => {
+    const { _id: id } = req.user;
+    const user = await User.findById(id);
+    delete user._doc.password;
+    res.status(200).json({ ...user._doc });
+});
+
 exports.me = catchAsync(async (req, res) => {
     const { _id: id } = req.user;
 

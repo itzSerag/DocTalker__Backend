@@ -1,4 +1,4 @@
-const user = require('../models/User');
+const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const AppError = require('../utils/appError');
 
@@ -9,8 +9,9 @@ exports.auth = async (req, res, next) => {
         req.user = await user.findById(decoded._id); // already attached to the request object -- mongoose model
 
         if (req.user === null) {
-            return next(new AppError('User not authorized', 404));
+            return res.status(401).json({ message: 'Unauthorized' });
         }
+        req.user = user;
         next();
     } catch (error) {
         return next(new AppError(`Error ${error}`, 404));

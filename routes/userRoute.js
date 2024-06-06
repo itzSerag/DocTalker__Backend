@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { deleteUser, updateUser } = require('../controllers/userController');
+const { deleteUser, updateUser, getMe } = require('../controllers/userController');
 const { auth } = require('../middlewares/auth');
 const controller = require('../controllers/authController');
 
@@ -14,6 +14,7 @@ router.post('/signup', controller.signup);
 
 router.delete('/', auth, deleteUser);
 router.put('/', auth, updateUser);
+router.get('/me', auth, getMe);
 router.get('/verifyToken', auth, (req, res) => {
     res.status(200).json({ message: 'Token is valid' });
 });
