@@ -3,8 +3,9 @@ const { getEmbeddings } = require('../services/huggingface');
 const { connectDB } = require('../config/database');
 const Doc = require('../models/Document');
 const { cosineSimilarity } = require('../utils/cosineSimilarity');
-const chatmodel = require('../models/Chat');
-const mongoose = require('mongoose');
+const chatModel = require('../models/Chat');
+const AppError = require('../utils/appError');
+const userModel = require('../models/User')
 
 exports.handler = async (req, res) => {
 
@@ -13,10 +14,12 @@ exports.handler = async (req, res) => {
         const { query, chatId, modelType } = req.body;
         const currUser = req.body
 
+        
+
         await connectDB();
 
         // Update chat history and retrieve updated history
-        const updatedChat = await chatmodel.findOneAndUpdate(
+        const updatedChat = await chatModel.findOneAndUpdate(
             { _id: chatId },
             { $push: { messages: { role: 'user', content: query } } },
             { new: true }
@@ -57,18 +60,20 @@ exports.handler = async (req, res) => {
         if (modelType === 'openai' || modelType === 'gemini-text') {
             response = await getCompletion(chatHistory, modelType);
         } else {
-            throw new Error('Invalid model type');
+            next(new AppError('Invalid model type' , 400));
         }
 
-        // Update chat model with assistant response
-        await chatmodel.findOneAndUpdate(
+        await chatModel.findOneAndUpdate(
             { _id: chatId },
             { $push: { messages: { role: 'assistant', content: response } } }
         );
 
-        // add a query to the user
-        currUser.queryRequest = currUser.queryRequest + 1;
-        await currUser.save();
+        // get the user in db and add 1 to the queryRequest
+        await userModel.findOneAndUpdate(
+            {_id :currUser._id} ,
+            { $inc: { queryRequest: 1 } }
+        );
+
 
         // Return the response
         res.status(200).json({
@@ -76,6 +81,6 @@ exports.handler = async (req, res) => {
             topChunks: topSimilarityChunks,
         });
     } catch (error) {
-        res.status(500).json({ error: error.message });
+       next(new AppError(error.message, 400));
     }
 };

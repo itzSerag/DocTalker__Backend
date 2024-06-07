@@ -67,11 +67,7 @@ exports.signup = catchAsync(async (req, res) => {
             email: user.email,
             firstName: user.firstName,
             lastName: user.lastName,
-            token: generateToken({ _id: user._id }),
-            otp: {
-                otp,
-                otpExpiresIn,
-            },
+            token: generateToken({ _id: user._id })
         },
     });
 });
@@ -275,13 +271,15 @@ exports.googleAuthFailure = (req, res) => {
 };
 
 exports.googleAuthSuccess = (req, res) => {
-    const token = req.query.token; // Use query parameter
-    const email = req.query.email;
+    const {token} = req.query // Use query parameter
+    const {email} = req.query
+    const {firstName} = req.query
 
     res.status(200).json({
         status: 'success',
         message: 'Google authentication successful.',
         token,
         email,
+        firstName
     });
 };
