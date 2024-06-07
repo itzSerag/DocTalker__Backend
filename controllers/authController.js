@@ -117,7 +117,7 @@ exports.resendOtp = catchAsync(async (req, res) => {
     }
 
     // delete any existing OTP on this email
-    await OTP.deleteOne({
+    await OTPModel.deleteOne({
         email,
     });
 
