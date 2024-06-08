@@ -1,43 +1,48 @@
-const nodemailer = require('nodemailer');
+const { SendEmailCommand } = require("@aws-sdk/client-ses");
+const { sesClient } = require("../config/AWS_SES_Config");
 
-// Configure nodemailer transporter
-const transporter = nodemailer.createTransport({
-    service: 'hotmail',
-    host: 'smtp-mail.outlook.com',
-    port: 587,
-    secure: false,
-    auth: {
-        user: process.env.HOTMAIL_EMAIL,
-        pass: process.env.HOTMAIL_PASSWORD,
+const createSendEmailCommand = (toAddress, fromAddress, clientName, otp) => {
+  return new SendEmailCommand({
+    Destination: {
+      ToAddresses: [toAddress],
     },
-    tls: {
-        ciphers: 'SSLv3',
+    Message: {
+      Body: {
+        Html: {
+          Charset: "UTF-8",
+          Data: `<html><body><p>Dear ${clientName},</p><p>Your OTP is: <strong>${otp}</strong></p><p>Thank you for using our service.</p></body></html>`,
+        },
+        Text: {
+          Charset: "UTF-8",
+          Data: `Dear ${clientName},\n\nYour OTP is: ${otp}\n\nThank you for using our service.`,
+        },
+      },
+      Subject: {
+        Charset: "UTF-8",
+        Data: `DocTalker Verification - OTP for ${clientName}`,
+      },
     },
-});
+    Source: fromAddress,
+    ReplyToAddresses: ["seragmahmoud62@gmail.com"],  // Adjust as needed
+  });
+};
 
-// Function to send OTP email
-const sendOTPEmail = async (toEmail, otp) => {
-    try {
-        // Create email options
-        const mailOptions = {
-            from: process.env.HOTMAIL_EMAIL,
-            to: toEmail,
-            subject: 'DocTalker Verification',
-            // TODO: Update email text to make it more user-friendly
-            text: `Your OTP is: ${otp}`,
-        };
+const sendOTPEmail = async (toEmail, clientName, otp) => {
+  const fromEmail = "seragmahmoud62@gmail.com";  // Ensure this email is verified in SES
+  const sendEmailCommand = createSendEmailCommand(toEmail, fromEmail, clientName, otp);
 
-        // Send email
-        transporter.sendMail(mailOptions, (error, info) => {
-            if (error) {
-                console.log('Error sending OTP email:', error);
-            } else {
-                console.log('OTP Email sent successfully:', info.response);
-            }
-        });
-    } catch (error) {
-        console.log('Error sending OTP email:', error);
+  try {
+    const data = await sesClient.send(sendEmailCommand);
+    console.log('OTP Email sent successfully:', data.MessageId);
+    return data;
+  } catch (error) {
+    if (error instanceof Error && error.name === "MessageRejected") {
+      console.error('Message rejected:', error);
+    } else {
+      console.error('Error sending OTP email:', error);
     }
+    throw error;
+  }
 };
 
 module.exports = { sendOTPEmail };

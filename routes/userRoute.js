@@ -13,7 +13,7 @@ router.put('/', auth, updateUser);
 router.get('/verifyToken', auth, (req, res) => {
     res.status(200).json({ message: 'Token is valid' });
 });
-router.get('/me' , auth, controller.me);
+router.get('/me' , auth, me);
 
 //TODO OTP AUTH
 router.post('/otp/verify', auth, controller.verifyOtp);

@@ -12,7 +12,7 @@ const passport = require('passport');
 const AppError = require('../utils/appError');
 
 // Signup Controller
-exports.signup = catchAsync(async (req, res) => {
+exports.signup = catchAsync(async (req, res , next) => {
     const { firstName, lastName, email, password } = req.body;
 
     // Hash the password
@@ -36,23 +36,21 @@ exports.signup = catchAsync(async (req, res) => {
     } catch (error) {
         console.error('Signup -- Creating S3 Folder -- Error:', error);
         await User.findByIdAndDelete(user._id);
-        return res.status(500).json({
-            status: 'fail',
-            error: 'Failed to create a folder for the user.',
-        });
+
+        next(new AppError('Failed to create S3 folder', 500));
     }
 
     // OTP Phase
     const otp = generateOTP();
-    const otpExpiresIn = new Date(Date.now() + 20 * 60 * 1000);
 
-    try {
-        await sendOTPEmail(email, otp);
-    } catch (error) {
-        await User.findByIdAndDelete(user._id);
-        console.error('Signup Error:', error);
-        return res.status(500).json({ error: 'Failed to send OTP' });
-    }
+ 
+    await sendOTPEmail(email, firstName,otp).then((data) => {
+        console.log('Email sent:', data);
+    }).catch((error) => {
+        console.error('Email sending error:', error);
+        next(new AppError(`Failed to send OTP error : ${error}`, 500));
+    })
+      
 
     const otpDocument = new OTPModel({
         email,
@@ -73,26 +71,28 @@ exports.signup = catchAsync(async (req, res) => {
 });
 
 // Login Controller
-exports.login = catchAsync(async (req, res) => {
+exports.login = catchAsync(async (req, res,next) => {
     const { email, password } = req.body;
 
     // Validate email format
     if (!validateEmail(email)) {
-        return res.status(400).json({ message: 'Invalid email format.' });
+        next(new AppError('invalid email format' , 400))
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-        return res.status(400).json({ message: 'User not found.' });
+       next(new AppError('User not Found' , 404))
     }
 
     const isMatch = bcrypt.compareSync(password, user.password);
     if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid password.' });
+        next(new AppError('User not Found' , 404))
     }
 
     res.status(200).json({
-        ...user._doc,
+        status: 'success',
+        email : user.email ,
+        firstName : user.firstName ,
         token: generateToken({ _id: user._id }),
     });
 });
@@ -109,11 +109,11 @@ exports.resendOtp = catchAsync(async (req, res) => {
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
-        return res.status(400).json({ error: 'User not found.' });
+        next(new AppError('There is no user with email address.', 404));
     }
 
     // delete any existing OTP on this email
-    await OTP.deleteOne({
+    await OTPModel.deleteOne({
         email,
     });
 
@@ -128,7 +128,10 @@ exports.resendOtp = catchAsync(async (req, res) => {
 
     await otpDocument.save();
 
-    res.status(200).json({ message: 'OTP sent successfully.' });
+    res.status(200).json({ 
+        status: 'success',
+        message: 'OTP sent successfully.' 
+    });
 });
 
 // Verify OTP Controller
@@ -188,7 +191,7 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
 });
 
 exports.setNewPassword = catchAsync(async (req, res, next) => {
-    // after the user verifed the otp
+    // after the user verification the otp
     const { email, newPassword, otp } = req.body;
 
     const user = await User.findOne({ email });
