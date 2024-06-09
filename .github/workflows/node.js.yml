@@ -25,5 +25,5 @@ jobs:
     - run: npm ci
     - run:
         touch .env
-        echo "${{variables.DOCTALKER_BACKEND_DEV_ENV}}" > .env
+        echo "${{secrets.DOCTALKER_BACKEND_DEV_ENV}}" > .env
    
