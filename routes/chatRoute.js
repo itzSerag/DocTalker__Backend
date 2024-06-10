@@ -17,12 +17,13 @@ const {
 
 // for testing only -- Chat CRUD Operations
 router.use(auth);
+router.use(isUserValid);
 router.get('/:id', getChat);
 router.get('/', getAllChats);
 router.delete('/:id', deleteChat);
 router.put('/:id', updateChat);
 
-router.post('/star', auth, isUserValid, starMessage);
-router.post('/unStar', auth, isUserValid, unStarMessage);
+router.post('/star',starMessage);
+router.post('/unStar', unStarMessage);
 
 module.exports = router;
