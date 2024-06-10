@@ -7,6 +7,8 @@ const controller = require('../controllers/authController');
 // public routes
 router.post('/login', controller.login);
 router.post('/signup', controller.signup);
+router.post('/forgetPassword' , controller.forgetPassword)
+
 
 router.delete('/', auth, deleteUser);
 router.put('/', auth, updateUser);
@@ -19,6 +21,7 @@ router.get('/me' , auth, me);
 router.post('/otp/verify', auth, controller.verifyOtp);
 router.post('/otp/resend', auth, controller.resendOtp);
 router.post('/resetPassword', auth, controller.resetPassword);
+
 
 // Google Auth
 router.get('/auth/google', controller.googleAuth);

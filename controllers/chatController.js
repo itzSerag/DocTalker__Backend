@@ -21,6 +21,7 @@ exports.getAllChats = catchAsync(async (req, res, next) => {
     });
 });
 
+
 // -- > ?
 exports.getChat = catchAsync(async (req, res, next) => {
     const { id } = req.params; //Chat ID
