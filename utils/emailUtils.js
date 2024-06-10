@@ -1,33 +1,38 @@
-const  nodemailer = require('nodemailer');
-const smtpTransport = require('nodemailer-smtp-transport');
+const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport(smtpTransport({
-  service: 'gmail',
-  host: 'smtp.gmail.com',
-  port : 465,
-  secure: true,
-  auth: {
-    user: 'mrnobody6222@gmail.com',
-    pass: 'Iamcomingharvard????333'
-  }
-}));
+// Configure nodemailer transporter
+const transporter = nodemailer.createTransport({
+    service: 'hotmail',
+    auth: {
+        // TODO: Update The names to be more secure
+        user: process.env.HOTMAIL_EMAIL,
+        pass: process.env.HOTMAIL_PASSWORD,
+    },
+});
 
-exports.sendOTPEmail = (toEmail , OTP) => {
-  var mailOptions = {
-    from: 'DocTalker Team ',
-    to: toEmail,
-    subject: `OTP verification`,
-    text: `Your OTP is ' ${OTP} ' . Please do not share this OTP with anyone.\n 
-          This OTP will expire in 5 minutes\n\n
-          Team Doctalker.
-          `
-  };
+// Function to send OTP email
+const sendOTPEmail = async (toEmail, otp) => {
+    try {
+        // Create email options
+        const mailOptions = {
+            from: process.env.HOTMAIL_EMAIL,
+            to: toEmail,
+            subject: 'DocTalker Verification',
+            // TODO: Update email text to make it more user-friendly
+            text: `Your OTP is: ${otp}`,
+        };
 
-  transporter.sendMail(mailOptions, function(error, info){
-    if (error) {
-      console.log(error);
-    } else {
-      console.log('Email sent: ' + info.response);
+        // Send email
+        transporter.sendMail(mailOptions, (error, info) => {
+            if (error) {
+                console.log('Error sending OTP email:', error);
+            } else {
+                console.log('OTP Email sent successfully:', info.response);
+            }
+        });
+    } catch (error) {
+        console.log('Error sending OTP email:', error);
     }
-  });
-}
+};
+
+module.exports = { sendOTPEmail };

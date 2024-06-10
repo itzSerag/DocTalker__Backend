@@ -14,9 +14,12 @@ const mongoose = require('mongoose');
 
 // Signup Controller
 exports.signup = catchAsync(async (req, res , next) => {
+
+    const session = await mongoose.startSession();
+
     try{
 
-        const session = await mongoose.startSession();
+      
         session.startTransaction(session.defaultTransactionOptions);
 
         const { firstName, lastName, email, password } = req.body;
@@ -49,8 +52,11 @@ exports.signup = catchAsync(async (req, res , next) => {
         const otp = generateOTP();
 
         try{
-        sendOTPEmail(email,otp)
+
+            await sendOTPEmail(email,otp)
+
         }catch(err){
+
             return next(new AppError("Failed to send OTP Email", 500))
         }
 
@@ -62,6 +68,8 @@ exports.signup = catchAsync(async (req, res , next) => {
         await otpDocument.save({session});
         await user.save({session});
 
+        await session.commitTransaction();
+
         res.status(200).json({
             status: 'success',
             data: {
@@ -71,8 +79,6 @@ exports.signup = catchAsync(async (req, res , next) => {
                 token: generateToken({ _id: user._id })
             },
         });
-    }catch(err){
-        session.abortTransaction();
     }finally{
         session.endSession();
     }
@@ -129,7 +135,7 @@ exports.resendOtp = catchAsync(async (req, res) => {
     });
 
     const otp = generateOTP();
-    await sendOTPEmail(email, otp);
+    sendOTPEmail(email, otp);
 
     const otpDocument = new OTPModel({
         email,

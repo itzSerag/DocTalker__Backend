@@ -20,7 +20,7 @@ POST {{host}}/api/user/signup
 content-type: application/json
 
 {
-    "email": "peter@gmail.com",
+    "email": "serag.eldien.mahmoud@gmail.com",
     "password": "kdkdk78787878",
     "firstName": "Peter",
     "lastName": "Khalil"
@@ -38,7 +38,7 @@ Authorization: Bearer {{token}}
 ###
 
 #User CRUD
-@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjY2ZTIxMWE0MzQ4ODk2YjIwNGVhM2EiLCJpYXQiOjE3MTgwMTk1MzEsImV4cCI6MTcyODM4NzUzMX0.kgp-cfXMG_Hnmgxg7cgnYjNMRvQ-4uP0ShkGcf4XcXY
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjY3MjVhZDEyNzQzOGE0YWIyOGZmZGQiLCJpYXQiOjE3MTgwMzU4ODYsImV4cCI6MTcyODQwMzg4Nn0.IseKhpvVUdp6NWGMgVDu7e6bTTe3jofwCupZMrmTCP0
 GET {{host}}/api/user/me
 content-type: application/json
 Authorization: Bearer {{token}}
@@ -67,7 +67,7 @@ content-type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "otp": "123456"
+    "otp": "433919"
 }
 ###
 POST {{host}}/api/user/otp/resend
