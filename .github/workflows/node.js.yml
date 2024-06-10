@@ -6,6 +6,7 @@ name: Node.js CI/CD
 on:
   push:
     branches: [ "master" ]
+
 jobs:
   build:
     runs-on: self-hosted
@@ -26,4 +27,3 @@ jobs:
     - run: |
         touch .env
         echo "${{secrets.DOCTALKER_BACKEND_DEV_ENV}}" > .env
-   
