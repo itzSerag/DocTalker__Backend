@@ -218,7 +218,8 @@ exports.setNewPassword = catchAsync(async (req, res, next) => {
 
 exports.resetPassword = catchAsync(async (req, res) => {
     // get the old password and compare it with the new password
-    const { email, oldPassword, newPassword } = req.body;
+    const { oldPassword, newPassword } = req.body;
+    const { email } = req.user;
 
     const user = await User.findOne({ email });
     if (!user) {
