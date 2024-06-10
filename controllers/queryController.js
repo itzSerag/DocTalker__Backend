@@ -7,7 +7,9 @@ const chatModel = require('../models/Chat');
 const AppError = require('../utils/appError');
 const userModel = require('../models/User');
 
-exports.handler = async (req, res, next) => {
+exports.handler = async (req, res) => {
+
+
     try {
         const { query, chatId, modelType } = req.body;
         const currUser = req.body;
