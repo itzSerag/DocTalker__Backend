@@ -38,12 +38,12 @@ exports.getChat = catchAsync(async (req, res, next) => {
     const messages = theChat.messages;
 
     const document = await Doc.findById(theChat.documentId);
-
+    const urls = document.Files.map((file) => file.FileURL);
     return res.status(200).json({
         status: 'success',
         name,
         messages,
-        url: document.FileUrl,
+        urls,
     });
 });
 
