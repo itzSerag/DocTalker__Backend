@@ -1,4 +1,3 @@
-// authController.js
 const User = require('../models/User');
 const bcrypt = require('bcrypt');
 const OTPModel = require('../models/OTP');
@@ -10,65 +9,76 @@ const catchAsync = require('../utils/catchAsync');
 const { createS3Folder } = require('../services/aws');
 const passport = require('passport');
 const AppError = require('../utils/appError');
+const mongoose = require('mongoose');
+
 
 // Signup Controller
 exports.signup = catchAsync(async (req, res , next) => {
-    const { firstName, lastName, email, password } = req.body;
+    try{
 
-    // Hash the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+        const session = await mongoose.startSession();
+        session.startTransaction(session.defaultTransactionOptions);
 
-    // Create a new user
-    const user = new User({
-        firstName,
-        lastName,
-        email,
-        password: hashedPassword,
-    });
+        const { firstName, lastName, email, password } = req.body;
 
-    // Save the user
-    await user.save();
+        // Hash the password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create a folder for the user in the S3 bucket
-    try {
-        await createS3Folder(user._id.toString());
-    } catch (error) {
-        console.error('Signup -- Creating S3 Folder -- Error:', error);
-        await User.findByIdAndDelete(user._id);
+        // Create a new user
+        const user = new User({
+            firstName,
+            lastName,
+            email,
+            password: hashedPassword,
+        });
 
-        next(new AppError('Failed to create S3 folder', 500));
+        
+
+        // Create a folder for the user in the S3 bucket
+        try {
+            await createS3Folder(user._id.toString());
+        } catch (error) {
+            console.error('Signup -- Creating S3 Folder -- Error:', error);
+            await User.findByIdAndDelete(user._id);
+
+            next(new AppError('Failed to create S3 folder', 500));
+        }
+
+        // ------- OTP Phase ------
+        const otp = generateOTP();
+
+        try{
+        sendOTPEmail(email,otp)
+        }catch(err){
+            return next(new AppError("Failed to send OTP Email", 500))
+        }
+
+        const otpDocument = new OTPModel({
+            email,
+            otp,
+        });
+
+        await otpDocument.save({session});
+        await user.save({session});
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                token: generateToken({ _id: user._id })
+            },
+        });
+    }catch(err){
+        session.abortTransaction();
+    }finally{
+        session.endSession();
     }
-
-    // OTP Phase
-    const otp = generateOTP();
-
- 
-    await sendOTPEmail(email, firstName,otp).then((data) => {
-        console.log('Email sent:', data);
-    }).catch((error) => {
-        console.error('Email sending error:', error);
-        next(new AppError(`Failed to send OTP error : ${error}`, 500));
-    })
-      
-
-    const otpDocument = new OTPModel({
-        email,
-        otp,
-    });
-
-    await otpDocument.save();
-
-    res.status(200).json({
-        status: 'success',
-        data: {
-            email: user.email,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            token: generateToken({ _id: user._id })
-        },
-    });
 });
+
+
 
 // Login Controller
 exports.login = catchAsync(async (req, res,next) => {
@@ -97,19 +107,13 @@ exports.login = catchAsync(async (req, res,next) => {
     });
 });
 
+
 // Resend OTP Controller
 exports.resendOtp = catchAsync(async (req, res) => {
-    const { email } = req.body;
+    const { email } = req.user;
 
-    // Validate email format
     if (!validateEmail(email)) {
         return res.status(400).json({ error: 'Invalid email format.' });
-    }
-
-    // Check if user exists
-    const user = await User.findOne({ email });
-    if (!user) {
-        next(new AppError('There is no user with email address.', 404));
     }
 
     // delete any existing OTP on this email
@@ -117,7 +121,6 @@ exports.resendOtp = catchAsync(async (req, res) => {
         email,
     });
 
-    // Generate and store OTP
     const otp = generateOTP();
     await sendOTPEmail(email, otp);
 
@@ -127,7 +130,6 @@ exports.resendOtp = catchAsync(async (req, res) => {
     });
 
     await otpDocument.save();
-
     res.status(200).json({ 
         status: 'success',
         message: 'OTP sent successfully.' 
@@ -169,6 +171,8 @@ exports.logOut = (req, res) => {
     res.redirect('/');
 };
 
+
+
 exports.forgetPassword = catchAsync(async (req, res, next) => {
     const { email } = req.body;
 
@@ -190,9 +194,12 @@ exports.forgetPassword = catchAsync(async (req, res, next) => {
     res.status(200).json({ status: 'success' });
 });
 
+
+
 exports.setNewPassword = catchAsync(async (req, res, next) => {
     // after the user verification the otp
-    const { email, newPassword, otp } = req.body;
+    const { email } = req.user;
+    const {newPassword, otp } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -205,15 +212,15 @@ exports.setNewPassword = catchAsync(async (req, res, next) => {
         next(new AppError('Invalid OTP', 404));
     }
 
-    if (otp == otpDocument.otp) {
-        // Hash the password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(newPassword, salt);
+    
+    // Hash the password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
 
-        user.password = hashedPassword;
+    user.password = hashedPassword;
 
-        await user.save();
-    }
+    await user.save();
+    
 
     res.status(200).json({
         status: 'success',
@@ -221,9 +228,11 @@ exports.setNewPassword = catchAsync(async (req, res, next) => {
     });
 });
 
+
 exports.resetPassword = catchAsync(async (req, res) => {
     // get the old password and compare it with the new password
-    const { email, oldPassword, newPassword } = req.body;
+    const { email } = req.user;
+    const {oldPassword, newPassword } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -233,10 +242,8 @@ exports.resetPassword = catchAsync(async (req, res) => {
     const isMatch = bcrypt.compareSync(oldPassword, user.password);
 
     if (!isMatch) {
-        return res.status(400).json({ message: 'Invalid password.' });
+        return next(new AppError('Invalid old password', 400));
     }
-
-    // Hash the password
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(newPassword, salt);
@@ -250,6 +257,7 @@ exports.resetPassword = catchAsync(async (req, res) => {
         message: 'password reset successfully',
     });
 });
+
 
 /// ALL About Google Auth
 exports.googleAuth = passport.authenticate('google', { scope: ['profile', 'email'] });
