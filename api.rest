@@ -1,0 +1,76 @@
+# NOTE: Follow the instructions below to run this file
+# Install "REST Client" extension in VS Code to run this file
+# Link: https://marketplace.visualstudio.com/items?itemName=humao.rest-client 
+# Or Search for "REST Client" in Extensions in VS Code or paste extension ID "humao.rest-client" in Extensions search
+
+
+@host = http://localhost:5000
+
+# Authentication
+POST {{host}}/api/user/login
+content-type: application/json
+
+{
+    "email": "peter@gmail.com",
+    "password": "dhdhdhhdhdd"
+}
+###
+
+POST {{host}}/api/user/signup
+content-type: application/json
+
+{
+    "email": "peter@gmail.com",
+    "password": "kdkdk78787878",
+    "firstName": "Peter",
+    "lastName": "Khalil"
+}
+###
+
+POST {{host}}/api/user/resetPassword
+content-type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "oldPassword": "kdkdk78787878",
+    "newPassword": "dhdhdhhdhdd"
+}
+###
+
+#User CRUD
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJfaWQiOiI2NjY2ZTIxMWE0MzQ4ODk2YjIwNGVhM2EiLCJpYXQiOjE3MTgwMTk1MzEsImV4cCI6MTcyODM4NzUzMX0.kgp-cfXMG_Hnmgxg7cgnYjNMRvQ-4uP0ShkGcf4XcXY
+GET {{host}}/api/user/me
+content-type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+DELETE {{host}}/api/user
+content-type: application/json
+Authorization: Bearer {{token}}
+
+###
+
+PUT {{host}}/api/user
+content-type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "firstName": "Peter",
+    "lastName": "Khalil Fahmy"
+}
+###
+
+# OTP
+POST {{host}}/api/user/otp/verify
+content-type: application/json
+Authorization: Bearer {{token}}
+
+{
+    "otp": "123456"
+}
+###
+POST {{host}}/api/user/otp/resend
+content-type: application/json
+Authorization: Bearer {{token}}
+###

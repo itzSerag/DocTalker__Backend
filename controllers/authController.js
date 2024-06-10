@@ -110,10 +110,17 @@ exports.login = catchAsync(async (req, res,next) => {
 
 // Resend OTP Controller
 exports.resendOtp = catchAsync(async (req, res) => {
-    const { email } = req.user;
+    const { email } = req.body;
 
+    // Validate email format
     if (!validateEmail(email)) {
         return res.status(400).json({ error: 'Invalid email format.' });
+    }
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+        next(new AppError('There is no user with email address.', 404));
     }
 
     // delete any existing OTP on this email
@@ -231,8 +238,7 @@ exports.setNewPassword = catchAsync(async (req, res, next) => {
 
 exports.resetPassword = catchAsync(async (req, res) => {
     // get the old password and compare it with the new password
-    const { email } = req.user;
-    const {oldPassword, newPassword } = req.body;
+    const { email, oldPassword, newPassword } = req.body;
 
     const user = await User.findOne({ email });
     if (!user) {
