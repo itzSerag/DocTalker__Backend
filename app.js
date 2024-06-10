@@ -7,10 +7,10 @@ const mongoSanitize = require('express-mongo-sanitize');
 const passport = require('passport');
 const morgan = require('morgan');
 const cors = require('cors');
-const golbalErrorHandler = require('../controllers/errorController');
-const AppError = require('../utils/appError');
+const golbalErrorHandler = require('./controllers/errorController');
+const AppError = require('./utils/appError');
 const app = express();
-const { connectDB } = require('../config/database');
+const { connectDB } = require('./config/database');
 
 // DEV ENVIRONMENT
 if (process.env.NODE_ENV === 'development') {
@@ -60,21 +60,21 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
-require('../config/passport');
+require('./config/passport');
 
 // Middleware for rate limiting
 app.use('/api', limiter);
 
 // Routes
-const paymentRoutes = require('../routes/paymentRoute');
-const uploadRoute = require('../routes/uploadRoute');
-const queryRoute = require('../routes/queryRoute');
-const userRoutes = require('../routes/userRoute');
-const chatRoutes = require('../routes/chatRoute');
-const extractionRoutes = require('../routes/extractionsRoute');
-const feedbackRoutes = require('../routes/feedbackRoute');
-const handwrittenRoutes = require('../routes/handwrittenRoute');
-const testRoutes = require('../routes/testRoute');
+const paymentRoutes = require('./routes/paymentRoute');
+const uploadRoute = require('./routes/uploadRoute');
+const queryRoute = require('./routes/queryRoute');
+const userRoutes = require('./routes/userRoute');
+const chatRoutes = require('./routes/chatRoute');
+const extractionRoutes = require('./routes/extractionsRoute');
+const feedbackRoutes = require('./routes/feedbackRoute');
+const handwrittenRoutes = require('./routes/handwrittenRoute');
+const testRoutes = require('./routes/testRoute');
 
 // Mount routes
 app.use('/api/payment', paymentRoutes);
