@@ -64,7 +64,7 @@ exports.handler = catchAsync(async (req, res, next) => {
                 next(new AppError(`Error processing file ${file.FileName}: ${error.message}`, 400));
             }
         }
-
+        document.isProcessed = true;
         await document.save({ session: session });
 
         // Create a new chat document and save it
