@@ -116,7 +116,7 @@ exports.login = catchAsync(async (req, res,next) => {
 
 // Resend OTP Controller
 exports.resendOtp = catchAsync(async (req, res) => {
-    const { email } = req.body;
+    const { email } = req.user;
 
     // Validate email format
     if (!validateEmail(email)) {
