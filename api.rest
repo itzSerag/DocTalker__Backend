@@ -23,6 +23,7 @@ content-type: application/json
 
 {
     "email": "hamada@gmail.com",
+    "email": "serag.eldien.mahmoud@gmail.com",
     "password": "kdkdk78787878",
     "firstName": "Ali",
     "lastName": "Khalil"
@@ -68,7 +69,7 @@ content-type: application/json
 Authorization: Bearer {{token}}
 
 {
-    "otp": "123456"
+    "otp": "433919"
 }
 ###
 POST {{host}}/api/user/otp/resend
