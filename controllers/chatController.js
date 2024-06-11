@@ -21,7 +21,6 @@
 //     });
 // });
 
-
 // // -- > ?
 // exports.getChat = catchAsync(async (req, res, next) => {
 //     const { id } = req.params; //Chat ID
@@ -160,16 +159,9 @@
 //     });
 // });
 
+//////////////////////////////////////////////////
 
-
- //////////////////////////////////////////////////
-
-
-
-
-
-
- const User = require('../models/User');
+const User = require('../models/User');
 const Chat = require('../models/Chat');
 const Doc = require('../models/Document');
 const catchAsync = require('../utils/catchAsync');
@@ -185,7 +177,7 @@ exports.getAllChats = catchAsync(async (req, res, next) => {
         return res.status(400).json({ message: 'User not found' });
     }
 
-    const allChats = user.chats.map(chat => ({
+    const allChats = user.chats.map((chat) => ({
         id: chat._id,
         chatName: chat.chatName,
     }));
@@ -211,7 +203,7 @@ exports.getChat = catchAsync(async (req, res, next) => {
     }
 
     const { chatName: name, messages } = theChat;
-    const urls = theChat.documentId.Files.map(file => file.FileURL);
+    const urls = theChat.documentId.Files.map((file) => file.FileURL);
 
     res.status(200).json({
         status: 'success',
@@ -243,9 +235,19 @@ exports.deleteChat = catchAsync(async (req, res, next) => {
 
 // Update a chatsss name
 exports.updateChat = catchAsync(async (req, res, next) => {
-    const { chatId, chatName } = req.body;
+    const { chatName } = req.body;
+    const { id } = req.params;
+    const { chats } = req.user;
 
-    await Chat.findByIdAndUpdate(chatId, { chatName });
+    if (!chats.includes(id)) {
+        return next(new AppError('Cannot find the chat', 400));
+    }
+
+    if (chatName.trim() === '') {
+        return next(new AppError('Chat name cannot be empty', 400));
+    }
+
+    await Chat.findByIdAndUpdate(id, { chatName });
 
     res.status(200).json({
         status: 'success',
@@ -308,9 +310,6 @@ exports.unStarMessage = catchAsync(async (req, res, next) => {
     });
 });
 
-
-
-
 exports.getStarredMessages = catchAsync(async (req, res, next) => {
     const currUser = req.user;
 
@@ -329,4 +328,3 @@ exports.getStarredMessages = catchAsync(async (req, res, next) => {
         messages,
     });
 });
-        
