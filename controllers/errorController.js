@@ -6,7 +6,7 @@ const handleCastErrorDB = (err) => {
 
 const handleDuplicateFieldsDB = (err) => {
     const value = Object.values(err.keyValue)[0];
-    return new AppError(`Duplicate field value: ${value}. Please use another value!`, 400);
+    return new AppError(`This email already registered please use another `, 400);
 };
 
 const handleValidationErrorDB = (err) => {
@@ -20,10 +20,10 @@ const handleJWTError = () => new AppError('Invalid token. Please log in again!',
 const handleJWTExpiredError = () => new AppError('Your token has expired! Please log in again.', 401);
 
 module.exports = (err, req, res, next) => {
-    let error = { ...err };
+    let error = Object.assign({}, err);
     error.message = err.message;
 
-    console.log('LOGGING ERROR FROM ERROR CONTROLLER', err);
+    console.error('LOGGING ERROR FROM ERROR CONTROLLER', err);
 
     if (err.name === 'CastError') error = handleCastErrorDB(error);
     if (err.code === 11000) error = handleDuplicateFieldsDB(error);
