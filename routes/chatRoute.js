@@ -15,11 +15,10 @@ const {
 
 // TODO : ADD AUTH MIDDLEWARE
 
-// for testing only -- Chat CRUD Operations
 router.use(auth);
 router.use(isUserValid);
 router.get('/:id', getChat);
-// router.get('/', getAllChats);
+router.get('/', getAllChats);
 router.delete('/:id', deleteChat);
 router.put('/:id', updateChat);
 
