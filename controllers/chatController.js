@@ -1,6 +1,5 @@
 const User = require('../models/User');
 const Chat = require('../models/Chat');
-const Doc = require('../models/Document');
 const catchAsync = require('../utils/catchAsync');
 const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
@@ -109,7 +108,7 @@ exports.starMessage = catchAsync(async (req, res, next) => {
     }
 
     // Ensure messageId is an ObjectId
-    const messageIdObj = mongoose.Types.ObjectId(messageId);
+    const messageIdObj = new mongoose.Types.ObjectId(messageId);
 
     // Add message id to the user's starMessages array
     currUser.starMessages.push({ messageID: messageIdObj, chatID: chat._id });
@@ -152,6 +151,15 @@ exports.getStarredMessages = catchAsync(async (req, res, next) => {
 
     const starredMessages = currUser.starMessages;
     const messages = [];
+
+    console.log(starredMessages);
+
+    if (starredMessages.length === 0) {
+        return res.status(200).json({
+            status: 'success',
+            message : 'No starred messages Yet',
+        });
+    }
 
     for (let i = 0; i < starredMessages.length; i++) {
         const message = await Chat.findById(starredMessages[i].chatID, {
