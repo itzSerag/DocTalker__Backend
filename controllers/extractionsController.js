@@ -12,7 +12,6 @@ const makeTextFile = (text, fileName) => {
     const filePath = `./temp/${fileName + '_'}${Date.now()}.txt`;
     fs.writeFileSync(filePath, text, 'utf-8');
     const originalFileName = fileName + '_' + Date.now() + '.txt';
-
     return {
         filePath: filePath,
         fileName: originalFileName,
@@ -35,6 +34,7 @@ const uploadTxtFileToS3 = async (fileInfoObj) => {
 };
 
 exports.extractContent = catchAsync(async (req, res, next) => {
+
     if (!req.body.url) return next(new AppError('Please provide a URL', 400));
 
     const { url } = req.body;
@@ -66,8 +66,8 @@ exports.extractContent = catchAsync(async (req, res, next) => {
         Files: [
             {
                 FileName: fileInfo.fileName,
-                FileKey: fileInfo.fileName,
-                FileURL: dataLocation,
+                FileURL: dataLocation.Location,
+                FileKey: dataLocation.Key,
             },
         ],
     });
