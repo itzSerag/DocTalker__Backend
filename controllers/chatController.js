@@ -46,6 +46,8 @@ exports.getChat = catchAsync(async (req, res, next) => {
         });
     }
 
+    // if the chat
+
     res.status(200).json({
         status: 'success',
         theChat,

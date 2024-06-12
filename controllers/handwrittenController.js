@@ -18,14 +18,13 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
         const filerWithUserId = currUser._id.toString() + '/' + folderName + '/';
         const imageFolderWithinPdf = filerWithUserId + 'images/';
 
-        // Upload the PDF to S3
+     
         const dataLocation = await uploadFile(file.originalname, file.buffer, file.mimetype, filerWithUserId);
-
-        // Generate images from the uploaded PDF
         const ArrayImagesBody = await generateImagesFromS3Doc(dataLocation.Location);
-
-        // Upload images to S3
         const ArrayImages = [];
+
+        // the file url is the first obj
+        ArrayImages.push({ FileName: file.originalname, FileKey: dataLocation.Key, FileURL: dataLocation.Location });
         for (const image of ArrayImagesBody) {
             const fileName = `${file.originalname} image${ArrayImagesBody.indexOf(image) + 1}`;
             const fileKey = `${dataLocation.Key} image${ArrayImagesBody.indexOf(image) + 1}`;
