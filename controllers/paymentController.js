@@ -40,7 +40,9 @@ exports.createCheckoutSession = async (req, res) => {
 
         await payment.save();
 
-        res.json({ session });
+        res.json({ 
+            url : session.url 
+        });
     } catch (error) {
         console.error('Error creating checkout session:', error);
         res.status(500).json({ error: 'Failed to create checkout session' });

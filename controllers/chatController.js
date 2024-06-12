@@ -32,20 +32,26 @@ exports.getChat = catchAsync(async (req, res, next) => {
         return next(new AppError('Chat not found', 400));
     }
 
-    const theChat = await Chat.findById(id).populate('documentId', 'Files');
-
+    const theChat = await Chat.findById(id).populate('documentId', 'Files').lean();
     if (!theChat) {
         return next(new AppError('Chat not found', 400));
     }
 
-    const { chatName: name, messages } = theChat;
+    // Remove Chunks field
+    if (theChat.documentId && Array.isArray(theChat.documentId.Files)) {
+        theChat.documentId.Files.forEach(file => {
+            if (file.Chunks) {
+                delete file.Chunks;
+            }
+        });
+    }
+
+    // const { chatName , Files.FileName ,  messages } = theChat;
     const urls = theChat.documentId.Files.map((file) => file.FileURL);
 
     res.status(200).json({
         status: 'success',
-        name,
-        messages,
-        urls,
+        theChat,
     });
 });
 
