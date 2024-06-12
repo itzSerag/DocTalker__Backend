@@ -53,6 +53,7 @@ exports.uploadHandwrittenPDF = async (req, res, next) => {
 
         // Update user upload count
         currUser.uploadRequest += ArrayImages.length;
+        currUser.chats.push(chat._id);
         await currUser.save();
 
         // Send success response
