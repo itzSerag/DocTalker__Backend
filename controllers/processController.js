@@ -73,9 +73,6 @@ exports.handler = catchAsync(async (req, res, next) => {
         })
 
 
-        currentUser.chats.push(chatId);
-        await currentUser.save({ session: session });
-
         await session.commitTransaction();
 
         return res.status(200).json({
