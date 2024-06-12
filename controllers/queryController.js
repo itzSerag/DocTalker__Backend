@@ -58,6 +58,7 @@ exports.handler = async (req, res , next) => {
         if (similarityResults[0].similarity < 0.5) {
             return res.status(200).json({
                 response: 'Sorry, I could not find an answer in the document. Please ask another question.',
+                messageId : chat.messages[chat.messages.length - 1]._id
             });
         }
 
