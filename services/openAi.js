@@ -11,7 +11,7 @@ exports.getCompletionfromOpenAI = async (prompt) => {
         model: OPEN_AI_COMPLETION_MODEL,
         max_tokens: 500,
         messages: prompt,
-        stream: false,
+        temperature: 0.1
     });
 
     console.log(completion.choices[0].message);

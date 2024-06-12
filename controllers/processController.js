@@ -8,10 +8,7 @@ const AppError = require('../utils/appError');
 const mongoose = require('mongoose');
 
 exports.handler = catchAsync(async (req, res, next) => {
-    if (req.method !== 'POST') {
-        return res.status(400).json({ message: 'HTTP method not allowed' });
-    }
-
+   
     const session = await mongoose.startSession();
     session.startTransaction(session.defaultTransactionOptions);
 
@@ -67,18 +64,16 @@ exports.handler = catchAsync(async (req, res, next) => {
         document.isProcessed = true;
         await document.save({ session: session });
 
-        // Create a new chat document and save it
-        const newChat = new ChatModel({
+        ChatModel.findByIdAndUpdate({
+            _id: chatId
+        }, {
             documentId: document._id,
-            chatName: document.FileName,
-            messages: [],
-        });
+            isProcessed: true,
+            chatName : document.FileName
+        })
 
-        await newChat.save({ session: session });
 
-        // Update the current user's chats
-        currentUser.chats.push(newChat._id);
-
+        currentUser.chats.push(chatId);
         await currentUser.save({ session: session });
 
         await session.commitTransaction();

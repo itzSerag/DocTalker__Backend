@@ -46,9 +46,6 @@ exports.getChat = catchAsync(async (req, res, next) => {
         });
     }
 
-    // const { chatName , Files.FileName ,  messages } = theChat;
-    const urls = theChat.documentId.Files.map((file) => file.FileURL);
-
     res.status(200).json({
         status: 'success',
         theChat,
@@ -173,6 +170,8 @@ exports.getStarredMessages = catchAsync(async (req, res, next) => {
         });
         messages.push(message.messages[0]);
     }
+
+    
 
     res.status(200).json({
         status: 'success',

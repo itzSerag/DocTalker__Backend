@@ -8,8 +8,6 @@ const AppError = require('../utils/appError');
 const userModel = require('../models/User');
 
 exports.handler = async (req, res , next) => {
-
-
     try {
         const { query, chatId, modelType } = req.body;
         const currUser = req.body;
@@ -48,19 +46,26 @@ exports.handler = async (req, res , next) => {
             }))
         );
 
-        // Select top five chunks based on similarity
+        // Sort similarity results and select top five chunks based on similarity
         similarityResults.sort((a, b) => b.similarity - a.similarity);
         const topSimilarityChunks = similarityResults.slice(0, 5).map((result) => ({
             rawText: result.chunk.rawText,
             pageNumber: result.chunk.pageNumber,
+            fileName: result.chunk.fileName,
         }));
 
+        console.log(similarityResults[0] , similarityResults[1])
+
+        if (similarityResults[0].similarity < 0.6) {
+            return res.status(200).json({
+                response: 'Sorry, I could not find an answer in the document. Please ask another question.',
+            });
+        }
+
         // Build the prompt
-        const promptStart = `You are a helpful bot called DocTalker Bot 
-                            that answers questions based on the given text.
-                            you and the user with a conversation and you can remmber all the conversation,
-                            Answer the question based on the context below ONLY. 
-                            NEVER ANSWER SOMETHING NOT IN CONTEXT, and answer in detail:\n\n`;
+        const promptStart = `You are DocTalker Bot that answers questions based ONLY on the given text. 
+        Answer the question based on the context below ONLY. Don't answer any question not in given context. 
+        Read the text below:\n\n`;
         const promptEnd = `\n\nQuestion: ${query}`;
         const rawTexts = topSimilarityChunks.map((chunk) => chunk.rawText).join(' ');
         const prompt = `${promptStart}${rawTexts}${promptEnd}`;
