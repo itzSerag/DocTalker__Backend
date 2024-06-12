@@ -18,7 +18,7 @@ const makeTextFile = (text, fileName) => {
     };
 };
 
-const uploadTxtFileToS3 = async (fileInfoObj) => {
+const uploadTxtFileToS3 = async (fileInfoObj , filerWithUserId) => {
     // return new Promise(async (resolve, reject) => {
     const fileName = fileInfoObj.fileName;
     const filePath = fileInfoObj.filePath;
@@ -26,7 +26,7 @@ const uploadTxtFileToS3 = async (fileInfoObj) => {
     const file = fs.readFileSync(filePath);
 
     // Upload file to S3
-    const AWSUrl = await uploadFile(fileName, file, 'text/plain');
+    const AWSUrl = await uploadFile(fileName, file, 'text/plain' , filerWithUserId);
 
     // delete the file from the server after its uploaded to S3
     fs.unlinkSync(filePath);
@@ -57,7 +57,9 @@ exports.extractContent = catchAsync(async (req, res, next) => {
         fileName = fileInfo.fileName;
     }
 
-    dataLocation = await uploadTxtFileToS3(fileInfo);
+    const filerWithUserId = currUser._id.toString() + '/';
+
+    dataLocation = await uploadTxtFileToS3(fileInfo , filerWithUserId);
 
     const fileNameWithoutTimestamp = extractFileName(fileName);
 
