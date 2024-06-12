@@ -165,10 +165,16 @@ exports.getStarredMessages = catchAsync(async (req, res, next) => {
     }
 
     for (let i = 0; i < starredMessages.length; i++) {
+        const chatId = starredMessages[i].chatID ;
         const message = await Chat.findById(starredMessages[i].chatID, {
             messages: { $elemMatch: { _id: starredMessages[i].messageID } },
         });
-        messages.push(message.messages[0]);
+        const the_message = message.messages[0];
+
+        messages.push({
+            the_message,
+            chatId
+        });
     }
 
     
