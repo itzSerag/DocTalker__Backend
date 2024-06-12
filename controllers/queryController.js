@@ -54,9 +54,8 @@ exports.handler = async (req, res , next) => {
             fileName: result.chunk.fileName,
         }));
 
-        console.log(similarityResults[0] , similarityResults[1])
 
-        if (similarityResults[0].similarity < 0.6) {
+        if (similarityResults[0].similarity < 0.5) {
             return res.status(200).json({
                 response: 'Sorry, I could not find an answer in the document. Please ask another question.',
             });
@@ -98,6 +97,7 @@ exports.handler = async (req, res , next) => {
         res.status(200).json({
             response,
             topChunks: topSimilarityChunks,
+            messageId : chat.messages[chat.messages.length - 1]._id
         });
     } catch (error) {
         next(new AppError(error.message, 400));
