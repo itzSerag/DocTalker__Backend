@@ -10,6 +10,8 @@ lerna-debug.log*
 #public folder
 public/
 node_modules/
+temp/
+testing.txt
 
 
 
