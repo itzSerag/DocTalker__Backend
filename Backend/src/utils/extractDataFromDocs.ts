@@ -56,7 +56,7 @@ export const processDocumentFile = async (fileName: string, fileKey: string): Pr
     const buffer = await getFileBuffer(fileKey);
     const ext = fileName.slice(fileName.lastIndexOf('.')).toLowerCase();
 
-    let fullText = '';
+    let fullText: string;
     const chunksWithPage: ExtractedChunk[] = [];
 
     if (ext === '.pdf') {

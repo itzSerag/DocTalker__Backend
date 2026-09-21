@@ -4,6 +4,8 @@
   "private": true,
   "description": "DocTalker AI Document Assistant - Monorepo (Backend & Frontend)",
   "scripts": {
+    "start": "npm run dev:frontend",
+    "dev": "npm run dev:frontend",
     "dev:backend": "npm --prefix Backend run dev",
     "dev:frontend": "npm --prefix Frontend run dev",
     "build:backend": "npm --prefix Backend run build",
