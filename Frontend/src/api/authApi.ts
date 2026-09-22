@@ -7,6 +7,11 @@ export interface User {
   email: string;
   isVerified?: boolean;
   role?: string;
+  subscription?: "free" | "Gold" | "Premium" | "admin";
+  uploadRequest?: number;
+  maxUploadRequest?: number;
+  queryRequest?: number;
+  queryMax?: number;
   accountType?: string;
   dailyQueriesCount?: number;
   dailyUploadsCount?: number;

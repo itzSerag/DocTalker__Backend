@@ -1,5 +1,7 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { X, Check, Zap, Sparkles, Shield, Loader2 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
 import { paymentApi } from "../api/paymentApi";
 
 interface PricingModalProps {
@@ -13,6 +15,8 @@ export const PricingModal: React.FC<PricingModalProps> = ({
   onClose,
   currentTier = "Free",
 }) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly",
   );
@@ -25,6 +29,17 @@ export const PricingModal: React.FC<PricingModalProps> = ({
     tierName: "Gold" | "Premium",
     price: number,
   ) => {
+    if (!isAuthenticated) {
+      onClose();
+      navigate("/login", {
+        state: {
+          from: "/pricing",
+          message: `Please sign in to subscribe to the ${tierName} plan.`,
+        },
+      });
+      return;
+    }
+
     try {
       setLoadingTier(tierName);
       setErrorMsg(null);

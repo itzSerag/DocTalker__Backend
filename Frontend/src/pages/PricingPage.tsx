@@ -1,10 +1,13 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import { Check, Zap, Sparkles, Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { paymentApi } from "../api/paymentApi";
 import HeroScene from "../components/3d/HeroScene";
 
 export const PricingPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
     "monthly",
   );
@@ -15,6 +18,13 @@ export const PricingPage: React.FC = () => {
     tierName: "Gold" | "Premium",
     price: number,
   ) => {
+    if (!isAuthenticated) {
+      navigate("/login", {
+        state: { from: "/pricing", message: "Please log in to subscribe." },
+      });
+      return;
+    }
+
     try {
       setLoadingTier(tierName);
       setErrorMsg(null);

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
 import HeroScene from "../components/3d/HeroScene";
@@ -12,6 +12,10 @@ export const LoginPage: React.FC = () => {
 
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const redirectPath = (location.state as { from?: string })?.from || "/app";
+  const redirectMessage = (location.state as { message?: string })?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,9 +27,25 @@ export const LoginPage: React.FC = () => {
       setError(null);
       setLoading(true);
       await login({ email, password });
-      navigate("/app");
+      navigate(redirectPath);
     } catch (err: unknown) {
-      const resError = err as { response?: { data?: { message?: string } } };
+      const resError = err as {
+        response?: {
+          data?: {
+            message?: string;
+            needsVerification?: boolean;
+            email?: string;
+          };
+          status?: number;
+        };
+      };
+      // Unverified user — redirect them to OTP verification
+      if (resError.response?.data?.needsVerification) {
+        navigate("/verify-otp", {
+          state: { email: resError.response.data.email || email },
+        });
+        return;
+      }
       setError(
         resError.response?.data?.message ||
           "Login failed. Please check your credentials.",
@@ -36,92 +56,44 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div
-      className="relative min-h-screen flex items-center justify-center p-4"
-      style={{ background: "var(--color-canvas)" }}
-    >
+    <div className="relative min-h-screen flex items-center justify-center p-4 bg-slate-950 font-sans antialiased selection:bg-indigo-500/30">
       {/* 3D Background */}
       <HeroScene />
 
       {/* Auth Card */}
-      <div
-        className="relative z-10 w-full animate-scale-in"
-        style={{ maxWidth: "420px" }}
-      >
+      <div className="relative z-10 w-full max-w-[420px] animate-scale-in">
         {/* Card */}
-        <div
-          className="rounded-xl p-7"
-          style={{
-            background: "var(--color-surface-0)",
-            border: "1px solid var(--color-border-default)",
-            boxShadow: "var(--shadow-xl)",
-          }}
-        >
+        <div className="rounded-2xl p-8 bg-slate-900/70 backdrop-blur-2xl border border-slate-800/80 shadow-2xl">
           {/* Brand */}
-          <div className="text-center mb-7">
+          <div className="text-center mb-8">
             <Link
               to="/"
-              className="inline-flex items-center gap-2.5 mb-5 group"
+              className="inline-flex items-center gap-3 mb-6 group transition-transform hover:scale-105"
             >
-              <div
-                className="w-10 h-10 rounded-md flex items-center justify-center font-bold text-sm text-white"
-                style={{
-                  background: "var(--color-brand-600)",
-                  boxShadow: "var(--shadow-brand-md)",
-                }}
-              >
+              <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center font-bold text-sm text-white shadow-lg shadow-indigo-600/30">
                 DT
               </div>
-              <span
-                className="font-bold text-lg tracking-tight"
-                style={{ color: "var(--color-text-primary)" }}
-              >
+              <span className="font-extrabold text-2xl tracking-tight text-white">
                 DocTalker
               </span>
             </Link>
 
-            <h1
-              className="text-xl font-bold mb-1"
-              style={{
-                color: "var(--color-text-primary)",
-                letterSpacing: "-0.02em",
-              }}
-            >
+            <h1 className="text-2xl font-bold mb-2 text-white tracking-tight">
               Welcome back
             </h1>
-            <p className="text-sm" style={{ color: "var(--color-text-muted)" }}>
-              Sign in to your workspace
-            </p>
+            <p className="text-sm text-slate-400">Sign in to your workspace</p>
           </div>
 
           {/* Google OAuth */}
           <a
             href="/api/user/auth/google"
-            className="flex items-center justify-center gap-3 w-full rounded-sm text-sm font-semibold transition-all group mb-5"
-            style={{
-              padding: "10px 16px",
-              background: "var(--color-surface-1)",
-              border: "1px solid var(--color-border-default)",
-              color: "var(--color-text-secondary)",
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor =
-                "var(--color-border-strong)";
-              (e.currentTarget as HTMLElement).style.color =
-                "var(--color-text-primary)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.borderColor =
-                "var(--color-border-default)";
-              (e.currentTarget as HTMLElement).style.color =
-                "var(--color-text-secondary)";
-            }}
+            className="flex items-center justify-center gap-3 w-full rounded-xl text-sm font-semibold transition-all group mb-6 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white shadow-sm"
           >
             <svg
               width="18"
               height="18"
               viewBox="0 0 24 24"
-              className="shrink-0"
+              className="shrink-0 group-hover:scale-110 transition-transform"
             >
               <path
                 fill="#4285F4"
@@ -144,37 +116,36 @@ export const LoginPage: React.FC = () => {
           </a>
 
           {/* Divider */}
-          <div className="divider mb-5">or continue with email</div>
+          <div className="flex items-center gap-3 mb-6">
+            <div className="flex-1 h-px bg-slate-800"></div>
+            <span className="text-xs font-medium text-slate-500 uppercase tracking-widest">
+              or
+            </span>
+            <div className="flex-1 h-px bg-slate-800"></div>
+          </div>
+
+          {/* Redirect Info */}
+          {redirectMessage && !error && (
+            <div className="mb-6 p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/25 text-indigo-300 text-sm font-medium text-center">
+              {redirectMessage}
+            </div>
+          )}
 
           {/* Error */}
           {error && (
-            <div
-              className="mb-4 p-3 rounded-sm text-xs"
-              style={{
-                background: "rgba(244,63,94,0.08)",
-                border: "1px solid rgba(244,63,94,0.2)",
-                color: "var(--color-danger)",
-              }}
-            >
+            <div className="mb-6 p-3 rounded-xl bg-rose-500/10 border border-rose-500/25 text-rose-400 text-sm font-medium text-center">
               {error}
             </div>
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label
-                className="block text-xs font-semibold mb-1.5"
-                style={{ color: "var(--color-text-secondary)" }}
-              >
+              <label className="block text-xs font-semibold mb-2 text-slate-300">
                 Email address
               </label>
-              <div className="input-icon">
-                <Mail
-                  size={14}
-                  style={{ color: "var(--color-text-muted)" }}
-                  className="shrink-0"
-                />
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-950/50 border border-slate-700/50 rounded-xl focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
+                <Mail size={16} className="text-slate-500 shrink-0" />
                 <input
                   type="email"
                   required
@@ -182,32 +153,25 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="name@company.com"
                   autoComplete="email"
+                  className="bg-transparent border-none outline-none w-full text-sm text-white placeholder-slate-600"
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label
-                  className="text-xs font-semibold"
-                  style={{ color: "var(--color-text-secondary)" }}
-                >
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-xs font-semibold text-slate-300">
                   Password
                 </label>
                 <a
                   href="#"
-                  className="text-xs transition-colors"
-                  style={{ color: "var(--color-brand-400)" }}
+                  className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                 >
                   Forgot password?
                 </a>
               </div>
-              <div className="input-icon">
-                <Lock
-                  size={14}
-                  style={{ color: "var(--color-text-muted)" }}
-                  className="shrink-0"
-                />
+              <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-950/50 border border-slate-700/50 rounded-xl focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
+                <Lock size={16} className="text-slate-500 shrink-0" />
                 <input
                   type="password"
                   required
@@ -215,6 +179,7 @@ export const LoginPage: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   autoComplete="current-password"
+                  className="bg-transparent border-none outline-none w-full text-sm text-white placeholder-slate-600"
                 />
               </div>
             </div>
@@ -222,7 +187,7 @@ export const LoginPage: React.FC = () => {
             <button
               type="submit"
               disabled={loading}
-              className="btn btn-primary btn-lg w-full mt-2"
+              className="flex items-center justify-center gap-2 w-full py-3 mt-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-sm font-semibold transition-all shadow-lg shadow-indigo-600/25 disabled:opacity-50 disabled:cursor-not-allowed group"
               id="btn-login-submit"
             >
               {loading ? (
@@ -230,32 +195,30 @@ export const LoginPage: React.FC = () => {
               ) : (
                 <>
                   <span>Sign In</span>
-                  <ArrowRight size={15} />
+                  <ArrowRight
+                    size={16}
+                    className="group-hover:translate-x-1 transition-transform"
+                  />
                 </>
               )}
             </button>
           </form>
 
           {/* Footer */}
-          <div
-            className="mt-6 pt-5 text-center space-y-2"
-            style={{ borderTop: "1px solid var(--color-border-hairline)" }}
-          >
-            <p className="text-xs" style={{ color: "var(--color-text-muted)" }}>
+          <div className="mt-8 pt-6 text-center border-t border-slate-800">
+            <p className="text-sm text-slate-400 mb-2">
               Don&apos;t have an account?{" "}
               <Link
                 to="/signup"
-                className="font-semibold transition-colors"
-                style={{ color: "var(--color-brand-400)" }}
+                className="font-semibold text-indigo-400 hover:text-indigo-300 transition-colors"
               >
                 Sign up free
               </Link>
             </p>
-            <p className="text-xs">
+            <p className="text-xs text-slate-500">
               <Link
                 to="/pricing"
-                className="transition-colors"
-                style={{ color: "var(--color-text-disabled)" }}
+                className="hover:text-slate-300 transition-colors"
               >
                 View Plans &amp; Pricing
               </Link>

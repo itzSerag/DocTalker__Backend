@@ -10,58 +10,38 @@ import {
   ChevronRight,
   Crown,
   Zap,
+  Loader2,
+  UploadCloud,
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 
+interface ChatItem {
+  id: string;
+  chatName: string;
+}
+
 interface SidebarProps {
-  activeChatId: string;
+  chats: ChatItem[];
+  chatsLoading?: boolean;
+  activeChatId: string | null;
   isMobileOpen?: boolean;
   onCloseMobile?: () => void;
   onSelectChat: (id: string) => void;
   onNewChat: () => void;
   onOpenPricing?: () => void;
+  onOpenUpload?: () => void;
 }
 
-const MOCK_CHATS = [
-  {
-    id: "1",
-    title: "Q3 Business Strategy Report",
-    time: "2m ago",
-    active: true,
-  },
-  {
-    id: "2",
-    title: "Competitor Landscape Analysis",
-    time: "1h ago",
-    active: false,
-  },
-  {
-    id: "3",
-    title: "AI Engineering Whitepaper",
-    time: "Yesterday",
-    active: false,
-  },
-  {
-    id: "4",
-    title: "Market Research & Forecasts",
-    time: "3d ago",
-    active: false,
-  },
-  {
-    id: "5",
-    title: "Q4 Financial Projections",
-    time: "Last week",
-    active: false,
-  },
-];
-
 export const Sidebar: React.FC<SidebarProps> = ({
+  chats,
+  chatsLoading = false,
   activeChatId,
   isMobileOpen = false,
   onCloseMobile,
   onSelectChat,
   onNewChat,
   onOpenPricing,
+  onOpenUpload,
 }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
@@ -72,12 +52,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
     navigate("/login");
   };
 
-  const filteredChats = MOCK_CHATS.filter((c) =>
-    c.title.toLowerCase().includes(searchQuery.toLowerCase()),
+  const filteredChats = chats.filter((c) =>
+    c.chatName.toLowerCase().includes(searchQuery.toLowerCase()),
   );
 
-  const usedQueries = 39;
-  const totalQueries = 50;
+  // Real quota from user object
+  const usedQueries = user?.queryRequest ?? 0;
+  const totalQueries = user?.queryMax ?? 50;
   const quotaPct = Math.round((usedQueries / totalQueries) * 100);
 
   const content = (
@@ -112,7 +93,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </span>
         </div>
 
-        {/* Mobile close */}
         {onCloseMobile && (
           <button onClick={onCloseMobile} className="toolbar-btn lg:hidden">
             <X size={16} />
@@ -120,8 +100,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
         )}
       </div>
 
-      {/* ── New Chat Button ── */}
-      <div className="px-3 pt-3 pb-2 shrink-0">
+      {/* ── New Chat / Upload Buttons ── */}
+      <div className="px-3 pt-3 pb-2 shrink-0 space-y-1.5">
         <button
           onClick={() => {
             onNewChat();
@@ -133,6 +113,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <Plus size={15} strokeWidth={2.5} />
           <span>New Conversation</span>
         </button>
+        {onOpenUpload && (
+          <button
+            onClick={() => {
+              onOpenUpload();
+              onCloseMobile?.();
+            }}
+            className="btn btn-secondary btn-sm w-full"
+          >
+            <UploadCloud size={13} />
+            <span>Upload Document</span>
+          </button>
+        )}
       </div>
 
       {/* ── Search ── */}
@@ -151,7 +143,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      {/* ── Chat List ── */}
       <div
         className="text-label px-4 pb-2 shrink-0"
         style={{ letterSpacing: "0.08em" }}
@@ -159,11 +150,35 @@ export const Sidebar: React.FC<SidebarProps> = ({
         Recent Chats
       </div>
 
+      {/* ── Chat List ── */}
       <nav className="flex-1 overflow-y-auto px-2 pb-2 space-y-0.5">
-        {filteredChats.length === 0 ? (
-          <p className="text-caption px-3 py-4 text-center">
-            No conversations yet
-          </p>
+        {chatsLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2
+              size={20}
+              className="animate-spin"
+              style={{ color: "var(--color-text-muted)" }}
+            />
+          </div>
+        ) : filteredChats.length === 0 ? (
+          <div className="px-3 py-6 text-center">
+            <MessageSquare
+              size={24}
+              className="mx-auto mb-2"
+              style={{ color: "var(--color-text-disabled)" }}
+            />
+            <p className="text-caption text-xs">
+              {searchQuery ? "No matching chats" : "No conversations yet"}
+            </p>
+            {!searchQuery && (
+              <p
+                className="text-xs mt-1"
+                style={{ color: "var(--color-text-disabled)" }}
+              >
+                Upload a document to get started
+              </p>
+            )}
+          </div>
         ) : (
           filteredChats.map((chat) => {
             const isActive = chat.id === activeChatId;
@@ -185,20 +200,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       : "var(--color-text-muted)",
                   }}
                 />
-                <span className="flex-1 truncate text-sm">{chat.title}</span>
-                {isActive ? (
+                <span className="flex-1 truncate text-sm">{chat.chatName}</span>
+                {isActive && (
                   <ChevronRight
                     size={12}
                     style={{ color: "var(--color-text-muted)" }}
                     className="shrink-0"
                   />
-                ) : (
-                  <span
-                    className="text-2xs shrink-0"
-                    style={{ color: "var(--color-text-disabled)" }}
-                  >
-                    {chat.time}
-                  </span>
                 )}
               </button>
             );
@@ -234,7 +242,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
             </span>
           </div>
 
-          {/* Progress bar */}
           <div
             className="h-1 rounded-full overflow-hidden"
             style={{ background: "var(--color-surface-2)" }}
@@ -242,7 +249,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div
               className="h-full rounded-full transition-all duration-500"
               style={{
-                width: `${quotaPct}%`,
+                width: `${Math.min(quotaPct, 100)}%`,
                 background:
                   quotaPct > 80
                     ? "var(--color-danger)"
@@ -262,7 +269,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         {/* User Profile Row */}
         <div className="flex items-center gap-2.5 px-1">
-          {/* Avatar */}
           <div
             className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-semibold text-sm"
             style={{
@@ -289,7 +295,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 className="text-2xs font-semibold"
                 style={{ color: "var(--color-warning)" }}
               >
-                {user?.isVerified ? "Pro Member" : "Free Tier"}
+                {user?.subscription === "free"
+                  ? "Free Tier"
+                  : (user?.subscription ?? "Free Tier")}
               </span>
             </div>
           </div>
@@ -303,11 +311,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
               className="toolbar-btn"
               title="Log out"
               id="btn-logout"
-              style={
-                {
-                  "--tw-hover-text": "var(--color-danger)",
-                } as React.CSSProperties
-              }
             >
               <LogOut size={14} />
             </button>

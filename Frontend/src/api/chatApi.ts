@@ -43,10 +43,18 @@ export interface SendQueryOptions {
 }
 
 export const chatApi = {
+  createChat: async (documentId: string, chatName?: string) => {
+    const res = await apiClient.post<{
+      status: string;
+      data: { chat: ChatThread & { id: string } };
+    }>("/chat", { documentId, chatName });
+    return res.data;
+  },
+
   getAllChats: async () => {
     const res = await apiClient.get<{
       status: string;
-      data: { chats: ChatThread[] };
+      allChats: Array<{ id: string; chatName: string }>;
     }>("/chat");
     return res.data;
   },
@@ -54,9 +62,13 @@ export const chatApi = {
   getChat: async (chatId: string) => {
     const res = await apiClient.get<{
       status: string;
-      data: { chat: ChatThread };
+      theChat?: any;
+      data?: { chat: ChatThread };
     }>(`/chat/${chatId}`);
-    return res.data;
+    return {
+      ...res.data,
+      chat: res.data.theChat || res.data.data?.chat,
+    };
   },
 
   deleteChat: async (chatId: string) => {
@@ -87,6 +99,29 @@ export const chatApi = {
       payload,
     );
     return res.data;
+  },
+
+  streamQuery: async (
+    chatId: string,
+    queryText: string,
+    modelType: "openai" | "gemini-text" = "openai",
+  ) => {
+    // We use native fetch to handle the stream
+    const baseURL = apiClient.defaults.baseURL || "/api";
+    const response = await fetch(`${baseURL}/query/query-stream`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ chatId, query: queryText, modelType }),
+      credentials: "include", // essential for cookies
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return response;
   },
 };
 

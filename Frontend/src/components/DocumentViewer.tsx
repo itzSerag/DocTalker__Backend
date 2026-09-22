@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 interface DocumentViewerProps {
+  documentTitle?: string;
   highlightPage?: number;
   highlightSnippet?: string;
 }
@@ -44,6 +45,7 @@ The remaining international markets contributed $6M, an increase of +8.3% YoY, r
 ];
 
 export const DocumentViewer: React.FC<DocumentViewerProps> = ({
+  documentTitle,
   highlightPage,
   highlightSnippet,
 }) => {
@@ -79,7 +81,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
             className="text-xs font-medium truncate"
             style={{ color: "var(--color-text-secondary)" }}
           >
-            Q3_2023_Business_Strategy_Report.pdf
+            {documentTitle || "Select or Upload a Document"}
           </span>
           <span
             className="shrink-0 text-2xs font-semibold px-2 py-0.5 rounded-full"

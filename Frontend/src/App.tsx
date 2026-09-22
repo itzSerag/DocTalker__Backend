@@ -11,6 +11,7 @@ import SignupPage from "./pages/SignupPage";
 import VerifyOtpPage from "./pages/VerifyOtpPage";
 import WorkspacePage from "./pages/WorkspacePage";
 import PricingPage from "./pages/PricingPage";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 export function App() {
   return (
@@ -22,7 +23,14 @@ export function App() {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          <Route path="/app" element={<WorkspacePage />} />
+          <Route
+            path="/app"
+            element={
+              <ProtectedRoute>
+                <WorkspacePage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Router>

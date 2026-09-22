@@ -1,16 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "../components/Sidebar";
 import { DocumentViewer } from "../components/DocumentViewer";
 import { ChatPanel } from "../components/ChatPanel";
 import { UploadModal } from "../components/UploadModal";
 import { PricingModal } from "../components/PricingModal";
 import { MobileHeader } from "../components/layout/MobileHeader";
+import { chatApi } from "../api/chatApi";
+
+interface ChatItem {
+  id: string;
+  chatName: string;
+}
 
 export function WorkspacePage() {
-  const [activeChatId, setActiveChatId] = useState("1");
-  const [currentPage, setCurrentPage] = useState(4);
-  const [documentName, setDocumentName] = useState(
-    "Q3_2023_Business_Strategy_Report.pdf",
+  const [chats, setChats] = useState<ChatItem[]>([]);
+  const [chatsLoading, setChatsLoading] = useState(true);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [documentName, setDocumentName] = useState<string>(
+    "Select or Upload a Document",
   );
 
   // Mobile layout state
@@ -24,28 +32,88 @@ export function WorkspacePage() {
   >("file");
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
+  // Fetch all chats for authenticated user
+  const fetchChats = useCallback(async (selectChatId?: string) => {
+    try {
+      setChatsLoading(true);
+      const res = await chatApi.getAllChats();
+      const allChats = res.allChats || [];
+      setChats(allChats);
+
+      if (selectChatId) {
+        setActiveChatId(selectChatId);
+      } else if (allChats.length > 0) {
+        setActiveChatId((prev) =>
+          prev && allChats.some((c) => c.id === prev) ? prev : allChats[0].id,
+        );
+      } else {
+        setActiveChatId(null);
+        setDocumentName("Select or Upload a Document");
+      }
+    } catch (err) {
+      console.error("Failed to load user chats:", err);
+    } finally {
+      setChatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchChats();
+  }, [fetchChats]);
+
+  // When activeChatId changes, fetch chat details to get document title
+  useEffect(() => {
+    if (!activeChatId) return;
+
+    let isMounted = true;
+    chatApi
+      .getChat(activeChatId)
+      .then((res) => {
+        if (!isMounted) return;
+        if (res.chat) {
+          const doc = (res.chat as any).documentId;
+          const name =
+            doc?.FileName ||
+            res.chat.title ||
+            res.chat.chatName ||
+            "Active Document";
+          setDocumentName(name);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to fetch chat details:", err);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeChatId]);
+
   const handleOpenUploadModal = (tab: "file" | "web" | "youtube" | "ocr") => {
     setUploadModalTab(tab);
     setIsUploadModalOpen(true);
   };
 
   const handleNewChat = () => {
-    setActiveChatId(`chat-${Date.now()}`);
-    setCurrentPage(1);
-    setMobileView("chat");
+    // Open upload modal to index a new document/source
+    handleOpenUploadModal("file");
   };
 
   const handleJumpToPage = (page: number) => {
     setCurrentPage(page);
-    // On mobile, if user clicks citation from chat, switch to document view
     setMobileView("document");
   };
 
-  const handleUploadSuccess = (data: Record<string, unknown>) => {
+  const handleUploadSuccess = async (data: Record<string, unknown>) => {
     const docData = data as {
-      data?: { documentName?: string };
+      chatId?: string;
+      documentId?: string;
+      data?: { chatId?: string; documentId?: string; documentName?: string };
       documentName?: string;
     };
+
+    const newChatId = docData.chatId || docData.data?.chatId;
+
     if (docData?.data?.documentName || docData?.documentName) {
       setDocumentName(
         docData?.data?.documentName ||
@@ -53,7 +121,11 @@ export function WorkspacePage() {
           "Uploaded Document",
       );
     }
+
     setIsUploadModalOpen(false);
+    // Refresh chats and switch to newly created chat
+    await fetchChats(newChatId);
+    setMobileView("chat");
   };
 
   return (
@@ -75,11 +147,14 @@ export function WorkspacePage() {
 
       {/* Sidebar: Desktop persistent + Mobile slide-over drawer */}
       <Sidebar
+        chats={chats}
+        chatsLoading={chatsLoading}
         activeChatId={activeChatId}
         isMobileOpen={isMobileSidebarOpen}
         onCloseMobile={() => setIsMobileSidebarOpen(false)}
         onSelectChat={(id) => setActiveChatId(id)}
         onNewChat={handleNewChat}
+        onOpenUpload={() => handleOpenUploadModal("file")}
         onOpenPricing={() => setIsPricingModalOpen(true)}
       />
 
@@ -93,7 +168,10 @@ export function WorkspacePage() {
             mobileView === "document" ? "flex" : "hidden lg:flex"
           }`}
         >
-          <DocumentViewer highlightPage={currentPage} />
+          <DocumentViewer
+            documentTitle={documentName}
+            highlightPage={currentPage}
+          />
         </div>
 
         {/* AI Chat Workspace:
@@ -105,6 +183,7 @@ export function WorkspacePage() {
           }`}
         >
           <ChatPanel
+            chatId={activeChatId}
             onOpenUploadModal={handleOpenUploadModal}
             onJumpToPage={handleJumpToPage}
           />
