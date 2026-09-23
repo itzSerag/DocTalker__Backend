@@ -98,7 +98,7 @@ export const VerifyOtpPage: React.FC = () => {
     try {
       setError(null);
       setLoading(true);
-      await verifyOtp(otp);
+      await verifyOtp(otp, email);
       navigate("/app");
     } catch (err: unknown) {
       const resError = err as { response?: { data?: { message?: string } } };

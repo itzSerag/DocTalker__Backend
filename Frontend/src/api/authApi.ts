@@ -47,8 +47,11 @@ export const authApi = {
     return res.data;
   },
 
-  verifyOtp: async (otp: string) => {
-    const res = await apiClient.post<AuthResponse>("/user/otp/verify", { otp });
+  verifyOtp: async (otp: string, email?: string) => {
+    const res = await apiClient.post<AuthResponse>("/user/otp/verify", {
+      otp,
+      email,
+    });
     return res.data;
   },
 

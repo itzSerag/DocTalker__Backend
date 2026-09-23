@@ -13,7 +13,7 @@ interface AuthContextType {
     email: string;
     password: string;
   }) => Promise<void>;
-  verifyOtp: (otp: string) => Promise<void>;
+  verifyOtp: (otp: string, email?: string) => Promise<void>;
   resendOtp: (email?: string) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -79,8 +79,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     await fetchCurrentUser();
   };
 
-  const verifyOtp = async (otp: string) => {
-    await authApi.verifyOtp(otp);
+  const verifyOtp = async (otp: string, email?: string) => {
+    await authApi.verifyOtp(otp, email);
     await fetchCurrentUser();
   };
 

@@ -23,8 +23,11 @@ export const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // If 401 and not already on auth/landing pages, can trigger session expiry
-    if (error.response?.status === 401) {
+    // Only warn if not a routine initial session probe to /user/me
+    if (
+      error.response?.status === 401 &&
+      !error.config?.url?.includes("/user/me")
+    ) {
       console.warn(
         "Session expired or unauthorized request:",
         error.config?.url,

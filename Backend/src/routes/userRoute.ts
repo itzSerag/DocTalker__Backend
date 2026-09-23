@@ -46,6 +46,9 @@ router.post('/signup', authLimiter, signup);
 router.post('/login', authLimiter, login);
 router.post('/forgetPassword', authLimiter, forgetPassword);
 router.post('/setNewPassword', authLimiter, setNewPassword);
+router.post('/otp/verify', verifyOtp);
+router.post('/otp/resend', otpResendLimiter, resendOtp);
+router.post('/resetPassword', resetPassword);
 router.get('/logout', logOut);
 
 // Google OAuth
@@ -63,10 +66,6 @@ router.delete('/', deleteUser);
 router.get('/verifyToken', (_req, res) => {
     res.status(200).json({ status: 'success', message: 'Token is valid' });
 });
-
-router.post('/otp/verify', verifyOtp);
-router.post('/otp/resend', otpResendLimiter, resendOtp);
-router.post('/resetPassword', resetPassword);
 router.post('/marketing-email', sendTestMarketingEmail);
 
 export default router;
