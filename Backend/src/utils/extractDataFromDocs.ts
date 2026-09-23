@@ -67,6 +67,8 @@ export const processDocumentFile = async (fileName: string, fileKey: string): Pr
         fullText = docxData.value || '';
     } else if (ext === '.txt') {
         fullText = buffer.toString('utf-8');
+    } else if (ext === '.csv') {
+        fullText = buffer.toString('utf-8');
     } else {
         throw new Error(`Unsupported document extension: ${ext}`);
     }

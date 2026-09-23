@@ -108,17 +108,22 @@ export const chatApi = {
   ) => {
     // We use native fetch to handle the stream
     const baseURL = apiClient.defaults.baseURL || "/api";
+    const token = localStorage.getItem("token");
     const response = await fetch(`${baseURL}/query/query-stream`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
       body: JSON.stringify({ chatId, query: queryText, modelType }),
       credentials: "include", // essential for cookies
     });
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(
+        errorBody?.message || `Request failed (${response.status}).`,
+      );
     }
 
     return response;

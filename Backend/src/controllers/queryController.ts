@@ -25,8 +25,8 @@ export const handler = catchAsync(async (req: Request, res: Response, next: Next
     }
 
     const chat = await Chat.findById(chatId);
-    if (!chat) {
-        return next(new AppError('Chat not found', 404));
+    if (!chat || !currUser.chats.some((userChatId) => userChatId.toString() === String(chatId))) {
+        return next(new AppError('Chat not found or access denied', 404));
     }
 
     // Retrieve document associated with the chat
@@ -151,8 +151,8 @@ export const streamHandler = catchAsync(async (req: Request, res: Response, next
     }
 
     const chat = await Chat.findById(chatId);
-    if (!chat) {
-        return next(new AppError('Chat not found', 404));
+    if (!chat || !currUser.chats.some((userChatId) => userChatId.toString() === String(chatId))) {
+        return next(new AppError('Chat not found or access denied', 404));
     }
     const document = await DocumentModel.findById(chat.documentId);
     if (!document) {

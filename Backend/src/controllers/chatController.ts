@@ -5,6 +5,8 @@ import Chat from '../models/Chat';
 import Document from '../models/Document';
 import catchAsync from '../utils/catchAsync';
 import AppError from '../utils/appError';
+import { getFileBuffer } from '../services/aws';
+import mime from 'mime-types';
 
 // Create a new chat (optionally linked to a document)
 export const createChat = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -105,6 +107,28 @@ export const getChat = catchAsync(async (req: Request, res: Response, next: Next
         status: 'success',
         theChat,
     });
+});
+
+// Serve a source through the authenticated API so private S3 objects can be previewed safely.
+export const getChatFile = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) return next(new AppError('User not authenticated', 401));
+    const { id, fileIndex } = req.params;
+    if (!req.user.chats.some((chatId) => chatId.toString() === id)) {
+        return next(new AppError('Chat not found or access denied', 404));
+    }
+    const index = Number(fileIndex);
+    if (!Number.isInteger(index) || index < 0) return next(new AppError('Invalid file index', 400));
+    const chat = await Chat.findById(id);
+    if (!chat) return next(new AppError('Chat not found', 404));
+    const document = await Document.findById(chat.documentId);
+    const file = document?.Files[index];
+    if (!file) return next(new AppError('Source file not found', 404));
+
+    const buffer = await getFileBuffer(file.FileKey);
+    res.setHeader('Content-Type', mime.lookup(file.FileName) || 'application/octet-stream');
+    res.setHeader('Content-Disposition', `inline; filename*=UTF-8''${encodeURIComponent(file.FileName)}`);
+    res.setHeader('Cache-Control', 'private, no-store');
+    return res.status(200).send(buffer);
 });
 
 // Delete a chat
@@ -261,6 +285,7 @@ export default {
     createChat,
     getAllChats,
     getChat,
+    getChatFile,
     deleteChat,
     updateChat,
     starMessage,

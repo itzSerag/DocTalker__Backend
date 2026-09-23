@@ -13,6 +13,9 @@ node_modules/
 temp/
 testing.txt
 
+./Backend/.env.*
+./Frontend/.env.*
+
 
 
 

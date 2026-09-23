@@ -12,7 +12,15 @@ const router = Router();
 router.post('/upload', auth, isUserValid, checkUploadRequest, upload.single('file'), checkFileType, fileUpload);
 
 // Folder / multi-file upload
-router.post('/uploadfolder', auth, isUserValid, checkUploadRequest, upload.array('files'), folderUpload);
+router.post(
+    '/uploadfolder',
+    auth,
+    isUserValid,
+    upload.array('files', 20),
+    checkUploadRequest,
+    checkFileType,
+    folderUpload
+);
 
 // Trigger processing and embeddings generation for a document
 router.post('/process', auth, isUserValid, processController.handler);

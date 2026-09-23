@@ -66,13 +66,14 @@ export const checkUploadRequest = (req: Request, _res: Response, next: NextFunct
     const subscription = req.user.subscription || 'free';
     const plan = SUBSCRIPTIONS[subscription] || SUBSCRIPTIONS.free;
 
-    if (req.user.uploadRequest < plan.maxUploadRequest) {
+    const requestedUploads = Array.isArray(req.files) ? req.files.length : 1;
+    if (req.user.uploadRequest + requestedUploads <= plan.maxUploadRequest) {
         return next();
     }
 
     return next(
         new AppError(
-            `You have reached your daily upload limit (${plan.maxUploadRequest} uploads). Please upgrade or try again tomorrow.`,
+            `This upload exceeds your remaining daily upload allowance (${Math.max(0, plan.maxUploadRequest - req.user.uploadRequest)} of ${plan.maxUploadRequest} files remaining).`,
             403
         )
     );

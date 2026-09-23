@@ -3,6 +3,7 @@ import {
     createChat,
     getAllChats,
     getChat,
+    getChatFile,
     deleteChat,
     updateChat,
     starMessage,
@@ -28,6 +29,7 @@ router.post('/', createChat);
 
 // Specific chat operations
 router.get('/:id', getChat);
+router.get('/:id/files/:fileIndex', getChatFile);
 router.put('/:id', updateChat);
 router.delete('/:id', deleteChat);
 

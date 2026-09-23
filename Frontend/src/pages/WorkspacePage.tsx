@@ -1,6 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { Sidebar } from "../components/Sidebar";
-import { DocumentViewer } from "../components/DocumentViewer";
+import {
+  DocumentViewer,
+  type WorkspaceSourceFile,
+} from "../components/DocumentViewer";
 import { ChatPanel } from "../components/ChatPanel";
 import { UploadModal } from "../components/UploadModal";
 import { PricingModal } from "../components/PricingModal";
@@ -16,10 +19,11 @@ export function WorkspacePage() {
   const [chats, setChats] = useState<ChatItem[]>([]);
   const [chatsLoading, setChatsLoading] = useState(true);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
   const [documentName, setDocumentName] = useState<string>(
     "Select or Upload a Document",
   );
+  const [documentFiles, setDocumentFiles] = useState<WorkspaceSourceFile[]>([]);
+  const [loadedChatId, setLoadedChatId] = useState<string | null>(null);
 
   // Mobile layout state
   const [mobileView, setMobileView] = useState<"document" | "chat">("chat");
@@ -28,7 +32,7 @@ export function WorkspacePage() {
   // Modals state
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [uploadModalTab, setUploadModalTab] = useState<
-    "file" | "web" | "youtube" | "ocr"
+    "file" | "folder" | "web" | "youtube" | "ocr"
   >("file");
   const [isPricingModalOpen, setIsPricingModalOpen] = useState(false);
 
@@ -49,6 +53,7 @@ export function WorkspacePage() {
       } else {
         setActiveChatId(null);
         setDocumentName("Select or Upload a Document");
+        setDocumentFiles([]);
       }
     } catch (err) {
       console.error("Failed to load user chats:", err);
@@ -72,17 +77,28 @@ export function WorkspacePage() {
       .then((res) => {
         if (!isMounted) return;
         if (res.chat) {
-          const doc = (res.chat as any).documentId;
+          const doc = res.chat.documentId as unknown as {
+            FileName?: string;
+            Files?: WorkspaceSourceFile[];
+          } | null;
           const name =
             doc?.FileName ||
             res.chat.title ||
             res.chat.chatName ||
             "Active Document";
           setDocumentName(name);
+          setDocumentFiles(doc?.Files || []);
+        } else {
+          setDocumentFiles([]);
         }
+        setLoadedChatId(activeChatId);
       })
       .catch((err) => {
         console.error("Failed to fetch chat details:", err);
+        if (isMounted) {
+          setDocumentFiles([]);
+          setLoadedChatId(activeChatId);
+        }
       });
 
     return () => {
@@ -90,7 +106,9 @@ export function WorkspacePage() {
     };
   }, [activeChatId]);
 
-  const handleOpenUploadModal = (tab: "file" | "web" | "youtube" | "ocr") => {
+  const handleOpenUploadModal = (
+    tab: "file" | "folder" | "web" | "youtube" | "ocr",
+  ) => {
     setUploadModalTab(tab);
     setIsUploadModalOpen(true);
   };
@@ -100,8 +118,7 @@ export function WorkspacePage() {
     handleOpenUploadModal("file");
   };
 
-  const handleJumpToPage = (page: number) => {
-    setCurrentPage(page);
+  const handleJumpToPage = (_page: number) => {
     setMobileView("document");
   };
 
@@ -170,8 +187,13 @@ export function WorkspacePage() {
           }`}
         >
           <DocumentViewer
+            key={activeChatId || "empty-workspace"}
+            chatId={activeChatId}
             documentTitle={documentName}
-            highlightPage={currentPage}
+            files={
+              activeChatId && loadedChatId === activeChatId ? documentFiles : []
+            }
+            isLoading={Boolean(activeChatId && loadedChatId !== activeChatId)}
           />
         </div>
 

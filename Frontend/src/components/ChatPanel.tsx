@@ -12,7 +12,6 @@ import {
   FileText,
   Globe,
   Video,
-  PenTool,
   Loader2,
   Copy,
   Check,
@@ -25,7 +24,9 @@ import { chatApi, type ChatMessage } from "../api/chatApi";
 
 interface ChatPanelProps {
   chatId?: string | null;
-  onOpenUploadModal: (tab: "file" | "web" | "youtube" | "ocr") => void;
+  onOpenUploadModal: (
+    tab: "file" | "folder" | "web" | "youtube" | "ocr",
+  ) => void;
   onJumpToPage: (page: number) => void;
   className?: string;
 }
@@ -368,7 +369,9 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           role: "assistant",
           model: selectedModel as ChatMessage["model"],
           content:
-            "Sorry, something went wrong while generating response. Please try again.",
+            err instanceof Error
+              ? err.message
+              : "The response could not be generated. Please try again.",
         },
       ]);
     } finally {
@@ -608,6 +611,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
           {[
             {
               icon: <FileText size={11} />,
+              label: "Chat with folder",
+              tab: "folder" as const,
+            },
+            {
+              icon: <FileText size={11} />,
               label: "Upload PDF",
               tab: "file" as const,
             },
@@ -620,11 +628,6 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
               icon: <Video size={11} />,
               label: "YouTube",
               tab: "youtube" as const,
-            },
-            {
-              icon: <PenTool size={11} />,
-              label: "Handwriting OCR",
-              tab: "ocr" as const,
             },
           ].map((action) => (
             <button

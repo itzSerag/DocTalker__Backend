@@ -5,23 +5,33 @@ export const documentApi = {
     const formData = new FormData();
     formData.append("file", file);
 
-    const res = await apiClient.post("/upload/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const res = await apiClient.post("/upload/upload", formData);
     return res.data;
   },
 
-  processDocument: async (
-    documentId: string,
-    files: (string | Record<string, unknown>)[],
-  ) => {
-    const res = await apiClient.post("/upload/process", {
-      documentId,
-      files,
-    });
+  uploadFolder: async (files: File[], folderName: string) => {
+    const formData = new FormData();
+    files.forEach((file) => formData.append("files", file));
+    formData.append("folderName", folderName);
+    const res = await apiClient.post("/upload/uploadfolder", formData);
     return res.data;
+  },
+
+  processDocument: async (chatId: string) => {
+    const res = await apiClient.post("/upload/process", { chatId });
+    return res.data;
+  },
+
+  getChatFile: async (
+    chatId: string,
+    fileIndex: number,
+    signal?: AbortSignal,
+  ) => {
+    const res = await apiClient.get(`/chat/${chatId}/files/${fileIndex}`, {
+      responseType: "blob",
+      signal,
+    });
+    return res.data as Blob;
   },
 
   extractContent: async (url: string) => {
@@ -33,11 +43,7 @@ export const documentApi = {
     const formData = new FormData();
     formData.append("file", imageFile);
 
-    const res = await apiClient.post("/handwritten/uploadPic", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    const res = await apiClient.post("/handwritten/uploadPic", formData);
     return res.data;
   },
 };

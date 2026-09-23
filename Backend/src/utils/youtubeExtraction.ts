@@ -9,7 +9,13 @@ export const extractTranscript = async (url: string): Promise<string> => {
             throw new AppError('No transcript found for this video', 404);
         }
 
-        const text = transcript.map((item) => item.text).join(' ');
+        const text = transcript
+            .map((item) => {
+                const seconds = Math.max(0, Math.floor(item.offset));
+                const timestamp = `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`;
+                return `[${timestamp}] ${item.text}`;
+            })
+            .join('\n');
         return text;
     } catch (error: any) {
         if (error instanceof AppError) throw error;
