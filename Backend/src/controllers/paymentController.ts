@@ -103,22 +103,13 @@ export const paymentSuccess = catchAsync(async (req: Request, res: Response, nex
         },
     });
 
-    return res.status(200).json({
-        status: 'success',
-        message: 'Payment completed successfully. Your subscription has been updated.',
-        data: {
-            subscription,
-            queryMax,
-            maxUploadRequest,
-        },
-    });
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/app?payment=success&tier=${subscription}`);
 });
 
 export const paymentCancel = (_req: Request, res: Response): void => {
-    res.status(200).json({
-        status: 'failed',
-        message: 'Payment checkout was cancelled.',
-    });
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    return res.redirect(`${frontendUrl}/pricing?payment=cancelled`);
 };
 
 export default { createCheckoutSession, paymentSuccess, paymentCancel };
