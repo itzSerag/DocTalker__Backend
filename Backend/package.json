@@ -10,8 +10,7 @@
         "start": "node dist/index.js",
         "lint": "eslint src/",
         "lint:fix": "eslint src/ --fix",
-        "format": "prettier --write \"**/*.{ts,json,md}\"",
-        "prepare": "husky"
+        "format": "prettier --write \"**/*.{ts,json,md}\""
     },
     "lint-staged": {
         "*.{ts,js}": [
