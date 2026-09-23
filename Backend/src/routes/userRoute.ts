@@ -41,12 +41,20 @@ const otpResendLimiter = rateLimit({
     legacyHeaders: false,
 });
 
+const otpVerifyLimiter = rateLimit({
+    max: 10,
+    windowMs: 15 * 60 * 1000,
+    message: { status: 'fail', message: 'Too many OTP attempts. Please wait 15 minutes and try again.' },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Public auth routes
 router.post('/signup', authLimiter, signup);
 router.post('/login', authLimiter, login);
 router.post('/forgetPassword', authLimiter, forgetPassword);
-router.post('/setNewPassword', authLimiter, setNewPassword);
-router.post('/otp/verify', verifyOtp);
+router.post('/setNewPassword', otpVerifyLimiter, setNewPassword);
+router.post('/otp/verify', otpVerifyLimiter, verifyOtp);
 router.post('/otp/resend', otpResendLimiter, resendOtp);
 router.post('/resetPassword', resetPassword);
 router.get('/logout', logOut);

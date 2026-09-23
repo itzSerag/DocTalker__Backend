@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import {
   X,
   UploadCloud,
@@ -38,11 +38,6 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ocrInputRef = useRef<HTMLInputElement>(null);
-
-  // Sync tab when initialTab changes
-  useEffect(() => {
-    setActiveTab(initialTab);
-  }, [initialTab]);
 
   if (!isOpen) return null;
 

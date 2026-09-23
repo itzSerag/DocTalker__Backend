@@ -28,6 +28,10 @@ export const SignupPage: React.FC = () => {
       setError("Please fill in all required fields.");
       return;
     }
+    if (firstName.trim().length < 3) {
+      setError("First name must be at least 3 characters.");
+      return;
+    }
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
       return;
@@ -35,9 +39,14 @@ export const SignupPage: React.FC = () => {
     try {
       setError(null);
       setLoading(true);
-      await signup({ firstName, lastName, email, password });
+      await signup({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim().toLowerCase(),
+        password,
+      });
       // Always redirect to OTP verification after successful signup
-      navigate("/verify-otp", { state: { email } });
+      navigate("/verify-otp", { state: { email: email.trim().toLowerCase() } });
     } catch (err: unknown) {
       const resError = err as { response?: { data?: { message?: string } } };
       setError(

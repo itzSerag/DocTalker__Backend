@@ -24,7 +24,8 @@ export const auth = async (req: Request, _res: Response, next: NextFunction): Pr
             return next(new AppError('No authorization token provided. Please log in.', 401));
         }
 
-        const secret = process.env.JWT_SECRET_KEY || 'default-jwt-secret';
+        const secret = process.env.JWT_SECRET_KEY;
+        if (!secret) return next(new AppError('Authentication is not configured.', 500));
         const decoded = jwt.verify(token, secret) as DecodedToken;
 
         if (!decoded?._id) {

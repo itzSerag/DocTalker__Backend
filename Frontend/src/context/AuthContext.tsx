@@ -27,7 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchCurrentUser = async () => {
+  const fetchCurrentUser = async (): Promise<void> => {
     try {
       const res = await authApi.getMe();
       if (res.user) {
@@ -36,6 +36,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setUser(null);
       }
     } catch {
+      localStorage.removeItem("token");
       setUser(null);
     } finally {
       setLoading(false);
@@ -54,6 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       })
       .catch(() => {
         if (isMounted) {
+          localStorage.removeItem("token");
           setUser(null);
           setLoading(false);
         }
@@ -65,7 +67,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, []);
 
   const login = async (data: { email: string; password: string }) => {
-    await authApi.login(data);
+    const res = await authApi.login(data);
+    const token = res.token || res.data?.token;
+    if (token) {
+      localStorage.setItem("token", token);
+    }
     await fetchCurrentUser();
   };
 
@@ -75,12 +81,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     email: string;
     password: string;
   }) => {
-    await authApi.signup(data);
-    await fetchCurrentUser();
+    const res = await authApi.signup(data);
+    const token = res.token || res.data?.token;
+    if (token) {
+      localStorage.setItem("token", token);
+    }
   };
 
   const verifyOtp = async (otp: string, email?: string) => {
-    await authApi.verifyOtp(otp, email);
+    const res = await authApi.verifyOtp(otp, email);
+    const token = res.token || res.data?.token;
+    if (token) {
+      localStorage.setItem("token", token);
+    }
     await fetchCurrentUser();
   };
 
@@ -92,6 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await authApi.logout();
     } finally {
+      localStorage.removeItem("token");
       setUser(null);
     }
   };

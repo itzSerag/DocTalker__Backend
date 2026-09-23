@@ -59,6 +59,12 @@ export const VerifyOtpPage: React.FC = () => {
 
   const handleDigitChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
+    if (value.length > 1) {
+      const nextDigits = value.slice(0, 6).split("");
+      setDigits([...nextDigits, ...Array(6 - nextDigits.length).fill("")]);
+      inputRefs.current[Math.min(nextDigits.length, 5)]?.focus();
+      return;
+    }
     const newDigits = [...digits];
     newDigits[index] = value.slice(-1);
     setDigits(newDigits);
@@ -73,10 +79,9 @@ export const VerifyOtpPage: React.FC = () => {
       .getData("text")
       .replace(/\D/g, "")
       .slice(0, 6);
-    if (pasted.length === 6) {
-      setDigits(pasted.split(""));
-      inputRefs.current[5]?.focus();
-    }
+    if (!pasted.length) return;
+    setDigits([...pasted, ...Array(6 - pasted.length).fill("")]);
+    inputRefs.current[Math.min(pasted.length - 1, 5)]?.focus();
   };
 
   const handleKeyDown = (
@@ -196,7 +201,9 @@ export const VerifyOtpPage: React.FC = () => {
                   }}
                   type="text"
                   inputMode="numeric"
-                  maxLength={1}
+                  autoComplete={idx === 0 ? "one-time-code" : "off"}
+                  aria-label={`Digit ${idx + 1} of 6`}
+                  maxLength={6}
                   value={digit}
                   onChange={(e) => handleDigitChange(idx, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(idx, e)}

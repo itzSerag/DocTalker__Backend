@@ -15,7 +15,9 @@ export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const redirectPath = (location.state as { from?: string })?.from || "/app";
+  const redirectPath =
+    (location.state as { from?: { pathname?: string } })?.from?.pathname ||
+    "/app";
   const redirectMessage = (location.state as { message?: string })?.message;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -164,12 +166,12 @@ export const LoginPage: React.FC = () => {
                 <label className="text-xs font-semibold text-slate-300">
                   Password
                 </label>
-                <a
-                  href="#"
+                <Link
+                  to="/forgot-password"
                   className="text-xs font-medium text-indigo-400 hover:text-indigo-300 transition-colors"
                 >
                   Forgot password?
-                </a>
+                </Link>
               </div>
               <div className="flex items-center gap-3 px-4 py-2.5 bg-slate-950/50 border border-slate-700/50 rounded-xl focus-within:border-indigo-500 focus-within:ring-1 focus-within:ring-indigo-500/50 transition-all">
                 <Lock size={16} className="text-slate-500 shrink-0" />

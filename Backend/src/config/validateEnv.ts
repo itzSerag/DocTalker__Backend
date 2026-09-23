@@ -9,6 +9,7 @@ export interface EnvConfig {
     NODE_ENV: 'development' | 'production' | 'test';
     BASE_URL: string;
     CORS_ORIGIN: string;
+    FRONTEND_URL: string;
     RATE_LIMIT_MAX: number;
     SESSION_SECRET: string;
     LOG_LEVEL: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
@@ -53,8 +54,40 @@ const envSchema = Joi.object({
     // Server & Core
     PORT: Joi.number().port().default(5000),
     NODE_ENV: Joi.string().valid('development', 'production', 'test').default('development'),
-    BASE_URL: Joi.string().default('http://localhost:5000'),
-    CORS_ORIGIN: Joi.string().default('*'),
+    BASE_URL: Joi.when('NODE_ENV', {
+        is: 'production',
+        then: Joi.string()
+            .uri({ scheme: ['https'] })
+            .required(),
+        otherwise: Joi.string().default('http://localhost:5000'),
+    }),
+    CORS_ORIGIN: Joi.when('NODE_ENV', {
+        is: 'production',
+        then: Joi.string()
+            .required()
+            .custom((value, helpers) => {
+                const origins = value.split(',').map((origin: string) => origin.trim());
+                for (const origin of origins) {
+                    try {
+                        const parsed = new URL(origin);
+                        if (parsed.protocol !== 'https:' || parsed.origin !== origin)
+                            return helpers.error('any.invalid');
+                    } catch {
+                        return helpers.error('any.invalid');
+                    }
+                }
+                return value;
+            })
+            .messages({ 'any.invalid': 'CORS_ORIGIN must list explicit HTTPS frontend origins in production.' }),
+        otherwise: Joi.string().default('*'),
+    }),
+    FRONTEND_URL: Joi.when('NODE_ENV', {
+        is: 'production',
+        then: Joi.string()
+            .uri({ scheme: ['https'] })
+            .required(),
+        otherwise: Joi.string().uri().default('http://localhost:5173'),
+    }),
     RATE_LIMIT_MAX: Joi.number().positive().default(300),
     SESSION_SECRET: Joi.string().required().messages({
         'any.required': 'SESSION_SECRET is required for session cookies.',

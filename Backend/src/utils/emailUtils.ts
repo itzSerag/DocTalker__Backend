@@ -93,7 +93,7 @@ export const sendOTPEmail = async (
  * Send welcome onboarding email after account verification
  */
 export const sendWelcomeEmail = async (toEmail: string, firstName: string): Promise<void> => {
-    const appUrl = `${process.env.BASE_URL || 'http://localhost:5173'}/app`;
+    const appUrl = `${process.env.FRONTEND_URL || 'http://localhost:5173'}/app`;
     const { subject, html, text } = getWelcomeEmailTemplate({ firstName, appUrl });
     await sendEmail({
         to: toEmail,

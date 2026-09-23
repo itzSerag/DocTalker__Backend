@@ -13,25 +13,36 @@ export const API_BASE_URL = getApiBaseUrl();
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true, // Enables HTTP-only strict cookies to be sent with every request
+  withCredentials: true, // Sends and receives the HTTP-only auth cookie
   headers: {
     "Content-Type": "application/json",
   },
 });
 
+// Request interceptor: Attach JWT Bearer token if available
+apiClient.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem("token");
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => Promise.reject(error),
+);
+
 // Interceptor to handle unauthenticated sessions cleanly
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Only warn if not a routine initial session probe to /user/me
-    if (
-      error.response?.status === 401 &&
-      !error.config?.url?.includes("/user/me")
-    ) {
-      console.warn(
-        "Session expired or unauthorized request:",
-        error.config?.url,
-      );
+    if (error.response?.status === 401) {
+      // Only warn if not a routine initial session probe to /user/me
+      if (!error.config?.url?.includes("/user/me")) {
+        console.warn(
+          "Session expired or unauthorized request:",
+          error.config?.url,
+        );
+      }
     }
     return Promise.reject(error);
   },

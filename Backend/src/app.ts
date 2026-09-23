@@ -58,17 +58,21 @@ export const App = (): Application => {
     // Security Headers
     app.use(helmet());
 
-    // CORS (dynamically echo origin when credentials: true is active)
-    const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()) : ['*'];
+    // Credentialed requests are limited to the configured frontend origins.
+    const configuredCorsOrigins = process.env.CORS_ORIGIN || (process.env.NODE_ENV === 'production' ? '' : '*');
+    const corsOrigins = configuredCorsOrigins
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => origin && origin !== '*');
+    const allowAnyOrigin = process.env.NODE_ENV !== 'production' && configuredCorsOrigins.trim() === '*';
+    if (process.env.RENDER) app.set('trust proxy', 1);
 
     app.use(
         cors({
             origin: (origin, callback) => {
                 if (!origin) return callback(null, true);
-                if (corsOrigins.includes('*') || corsOrigins.includes(origin)) {
-                    return callback(null, origin);
-                }
-                return callback(null, origin);
+                if (allowAnyOrigin || corsOrigins.includes(origin)) return callback(null, origin);
+                return callback(null, false);
             },
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
             credentials: true,
@@ -102,7 +106,7 @@ export const App = (): Application => {
             cookie: {
                 httpOnly: true,
                 secure: process.env.NODE_ENV === 'production',
-                sameSite: 'strict',
+                sameSite: 'lax',
                 maxAge: 24 * 60 * 60 * 1000,
             },
         })

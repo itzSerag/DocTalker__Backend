@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   Send,
   Sparkles,
@@ -180,8 +186,27 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   onJumpToPage,
   className = "",
 }) => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [chatMessages, setChatMessages] = useState<{
+    chatId: string | null;
+    items: ChatMessage[];
+  }>({ chatId: null, items: [] });
+  const messages = useMemo(
+    () => (chatMessages.chatId === chatId ? chatMessages.items : []),
+    [chatMessages, chatId],
+  );
+  const loadingHistory = Boolean(chatId && chatMessages.chatId !== chatId);
+  const setMessages = useCallback(
+    (update: ChatMessage[] | ((current: ChatMessage[]) => ChatMessage[])) => {
+      setChatMessages((current) => ({
+        chatId: chatId ?? null,
+        items:
+          typeof update === "function"
+            ? update(current.chatId === (chatId ?? null) ? current.items : [])
+            : update,
+      }));
+    },
+    [chatId],
+  );
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedModel, setSelectedModel] = useState("openai");
@@ -192,13 +217,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
   // Load chat messages when active chatId changes
   useEffect(() => {
     if (!chatId) {
-      setMessages([]);
       return;
     }
 
     let isCurrent = true;
-    setLoadingHistory(true);
-
     chatApi
       .getChat(chatId)
       .then((res) => {
@@ -218,15 +240,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
       })
       .catch((err) => {
         console.error("Failed to load chat history:", err);
-      })
-      .finally(() => {
-        if (isCurrent) setLoadingHistory(false);
+        if (isCurrent) setMessages([]);
       });
 
     return () => {
       isCurrent = false;
     };
-  }, [chatId]);
+  }, [chatId, setMessages]);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -471,7 +491,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({
 
       {/* ── Message Feed ── */}
       <div className="flex-1 overflow-y-auto" style={{ padding: "16px" }}>
-        {loadingHistory ? (
+        {chatId && loadingHistory ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-6 space-y-3">
             <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
             <p className="text-xs text-slate-400">

@@ -5,7 +5,7 @@ import User from '../models/User';
 import OTP from '../models/OTP';
 import { generateToken } from '../utils/generateToken';
 import { sendOTPEmail, sendWelcomeEmail } from '../utils/emailUtils';
-import { generateOTP } from '../utils/generateOTP';
+import { compareOTP, generateOTP, hashOTP } from '../utils/generateOTP';
 import { validateEmail } from '../utils/emailValidation';
 import catchAsync from '../utils/catchAsync';
 import { createS3Folder } from '../services/aws';
@@ -13,12 +13,27 @@ import AppError from '../utils/appError';
 import logger from '../utils/logger';
 import { setAuthCookie, clearAuthCookie } from '../utils/cookieUtils';
 
+const normalizeEmail = (email: string): string => email.trim().toLowerCase();
+const OTP_TTL_MS = 20 * 60 * 1000;
+
+const consumeOtpAttempt = async (otpId: unknown) =>
+    OTP.findOneAndUpdate({ _id: otpId, attempts: { $lt: 5 } }, { $inc: { attempts: 1 } }, { new: true });
+
 // Signup Controller
 export const signup = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { firstName, lastName, email, password } = req.body;
+    const { firstName, lastName, password } = req.body;
+    const email = typeof req.body.email === 'string' ? normalizeEmail(req.body.email) : '';
 
     if (!firstName || !email || !password) {
         return next(new AppError('Please provide firstName, email, and password', 400));
+    }
+
+    if (typeof firstName !== 'string' || firstName.trim().length < 3) {
+        return next(new AppError('First name must be at least 3 characters long', 400));
+    }
+
+    if (typeof password !== 'string' || password.length < 8) {
+        return next(new AppError('Password must be at least 8 characters long', 400));
     }
 
     if (!validateEmail(email)) {
@@ -57,10 +72,11 @@ export const signup = catchAsync(async (req: Request, res: Response, next: NextF
         // User is created; they can use resend OTP
     }
 
-    await OTP.deleteMany({ email });
+    await OTP.deleteMany({ email, purpose: 'verification' });
     const otpDocument = new OTP({
         email,
-        otp: otpCode,
+        otp: hashOTP(otpCode),
+        purpose: 'verification',
     });
     await otpDocument.save();
 
@@ -81,10 +97,15 @@ export const signup = catchAsync(async (req: Request, res: Response, next: NextF
 
 // Login Controller
 export const login = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { email, password } = req.body;
+    const { password } = req.body;
+    const email = typeof req.body.email === 'string' ? normalizeEmail(req.body.email) : '';
 
     if (!email || !password) {
         return next(new AppError('Please provide both email and password', 400));
+    }
+
+    if (typeof email !== 'string' || typeof password !== 'string') {
+        return next(new AppError('Please provide a valid email and password', 400));
     }
 
     if (!validateEmail(email)) {
@@ -126,25 +147,29 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
 
 // Resend OTP Controller
 export const resendOtp = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const email = req.user?.email || req.body?.email;
+    const email = req.user?.email || (typeof req.body?.email === 'string' ? normalizeEmail(req.body.email) : '');
 
     if (!email || !validateEmail(email)) {
         return next(new AppError('Invalid or missing email address', 400));
     }
 
     const user = await User.findOne({ email });
-    if (!user) {
-        return next(new AppError('No user found with this email address', 404));
+    if (!user || user.isVerified) {
+        return res.status(200).json({
+            status: 'success',
+            message: 'If the account can be verified, a new code has been sent.',
+        });
     }
 
-    await OTP.deleteMany({ email });
+    await OTP.deleteMany({ email, purpose: 'verification' });
 
     const otpCode = generateOTP();
     await sendOTPEmail(email, otpCode, user.firstName);
 
     const otpDoc = new OTP({
         email,
-        otp: otpCode,
+        otp: hashOTP(otpCode),
+        purpose: 'verification',
     });
     await otpDoc.save();
 
@@ -156,28 +181,37 @@ export const resendOtp = catchAsync(async (req: Request, res: Response, next: Ne
 
 // Verify OTP Controller
 export const verifyOtp = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const email = req.user?.email || req.body?.email;
+    const email = req.user?.email || (typeof req.body?.email === 'string' ? normalizeEmail(req.body.email) : '');
     const { otp } = req.body;
 
-    if (!email || !otp) {
+    if (!email || typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
         return next(new AppError('Email and OTP are required', 400));
     }
 
-    const otpDocument = await OTP.findOne({ email });
+    const otpDocument = await OTP.findOne({ email, purpose: 'verification' });
     if (!otpDocument) {
         return next(new AppError('OTP expired or not found. Please request a new one.', 404));
     }
 
-    // Increment attempt counter to prevent brute-force
-    otpDocument.attempts = (otpDocument.attempts || 0) + 1;
-    if (otpDocument.attempts > 5) {
-        await OTP.deleteMany({ email });
+    if (Date.now() - new Date(otpDocument.createdAt || 0).getTime() >= OTP_TTL_MS) {
+        await OTP.deleteOne({ _id: otpDocument._id });
+        return next(new AppError('OTP expired or not found. Please request a new one.', 404));
+    }
+
+    const attemptedOtp = await consumeOtpAttempt(otpDocument._id);
+    if (!attemptedOtp) {
+        await OTP.deleteOne({ _id: otpDocument._id });
         return next(new AppError('Too many incorrect attempts. Please request a new OTP.', 429));
     }
-    await otpDocument.save();
 
-    if (otpDocument.otp !== otp) {
-        return next(new AppError(`Invalid OTP code. ${5 - otpDocument.attempts} attempts remaining.`, 400));
+    if (!compareOTP(otpDocument.otp, otp)) {
+        if ((attemptedOtp.attempts ?? 1) >= 5) {
+            await OTP.deleteOne({ _id: otpDocument._id });
+            return next(new AppError('Too many incorrect attempts. Please request a new OTP.', 429));
+        }
+        return next(
+            new AppError(`Invalid OTP code. ${Math.max(0, 5 - (attemptedOtp.attempts ?? 1))} attempts remaining.`, 400)
+        );
     }
 
     const user = await User.findOne({ email });
@@ -188,7 +222,7 @@ export const verifyOtp = catchAsync(async (req: Request, res: Response, next: Ne
     user.isVerified = true;
     await user.save();
 
-    await OTP.deleteMany({ email });
+    await OTP.deleteMany({ email, purpose: 'verification' });
 
     // Send welcome email in background
     sendWelcomeEmail(user.email, user.firstName).catch((err) => {
@@ -218,7 +252,7 @@ export const logOut = (_req: Request, res: Response): void => {
 
 // Forgot Password
 export const forgetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const { email } = req.body;
+    const email = typeof req.body.email === 'string' ? normalizeEmail(req.body.email) : '';
 
     if (!email || !validateEmail(email)) {
         return next(new AppError('Please provide a valid email address', 400));
@@ -226,16 +260,20 @@ export const forgetPassword = catchAsync(async (req: Request, res: Response, nex
 
     const user = await User.findOne({ email });
     if (!user) {
-        return next(new AppError('No user found with that email address', 404));
+        return res.status(200).json({
+            status: 'success',
+            message: 'If an account exists for this email, a password reset code has been sent.',
+        });
     }
 
     const otpCode = generateOTP();
     await sendOTPEmail(email, otpCode, user.firstName);
 
-    await OTP.deleteMany({ email });
+    await OTP.deleteMany({ email, purpose: 'password_reset' });
     const otpDoc = new OTP({
         email,
-        otp: otpCode,
+        otp: hashOTP(otpCode),
+        purpose: 'password_reset',
     });
     await otpDoc.save();
 
@@ -247,28 +285,52 @@ export const forgetPassword = catchAsync(async (req: Request, res: Response, nex
 
 // Set New Password with OTP
 export const setNewPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const email = req.user?.email || req.body?.email;
+    const email = req.user?.email || (typeof req.body?.email === 'string' ? normalizeEmail(req.body.email) : '');
     const { newPassword, otp } = req.body;
 
     if (!email || !newPassword || !otp) {
         return next(new AppError('Email, newPassword, and otp are required', 400));
     }
 
-    const user = await User.findOne({ email });
-    if (!user) {
-        return next(new AppError('User not found', 404));
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+        return next(new AppError('Password must be at least 8 characters long', 400));
     }
 
-    const otpDoc = await OTP.findOne({ email });
-    if (!otpDoc || otpDoc.otp !== otp) {
+    if (typeof otp !== 'string' || !/^\d{6}$/.test(otp)) {
+        return next(new AppError('A valid 6-digit OTP is required', 400));
+    }
+
+    const otpDoc = await OTP.findOne({ email, purpose: 'password_reset' });
+    if (!otpDoc || Date.now() - new Date(otpDoc.createdAt || 0).getTime() >= OTP_TTL_MS) {
+        return next(new AppError('Invalid or expired OTP', 400));
+    }
+
+    const attemptedOtp = await consumeOtpAttempt(otpDoc._id);
+    if (!attemptedOtp) {
+        await OTP.deleteOne({ _id: otpDoc._id });
+        return next(new AppError('Too many incorrect attempts. Please request a new OTP.', 429));
+    }
+    if (!compareOTP(otpDoc.otp, otp)) {
+        if ((attemptedOtp.attempts ?? 1) >= 5) {
+            await OTP.deleteOne({ _id: otpDoc._id });
+            return next(new AppError('Too many incorrect attempts. Please request a new OTP.', 429));
+        }
+        return next(new AppError('Invalid or expired OTP', 400));
+    }
+
+    const consumedOtp = await OTP.findOneAndDelete({ _id: otpDoc._id, attempts: attemptedOtp.attempts });
+    if (!consumedOtp) {
+        return next(new AppError('Invalid or expired OTP', 400));
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
         return next(new AppError('Invalid or expired OTP', 400));
     }
 
     const salt = await bcrypt.genSalt(10);
     user.password = await bcrypt.hash(newPassword, salt);
     await user.save();
-
-    await OTP.deleteMany({ email });
 
     return res.status(200).json({
         status: 'success',
@@ -278,11 +340,15 @@ export const setNewPassword = catchAsync(async (req: Request, res: Response, nex
 
 // Reset Password (with old password)
 export const resetPassword = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
-    const email = req.user?.email || req.body?.email;
+    const email = req.user?.email || (typeof req.body?.email === 'string' ? normalizeEmail(req.body.email) : '');
     const { oldPassword, newPassword } = req.body;
 
     if (!email || !oldPassword || !newPassword) {
         return next(new AppError('Please provide email, oldPassword, and newPassword', 400));
+    }
+
+    if (typeof newPassword !== 'string' || newPassword.length < 8) {
+        return next(new AppError('Password must be at least 8 characters long', 400));
     }
 
     const user = await User.findOne({ email });

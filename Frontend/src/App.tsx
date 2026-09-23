@@ -11,6 +11,7 @@ import SignupPage from "./pages/SignupPage";
 import VerifyOtpPage from "./pages/VerifyOtpPage";
 import WorkspacePage from "./pages/WorkspacePage";
 import PricingPage from "./pages/PricingPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 export function App() {
@@ -20,6 +21,7 @@ export function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/verify-otp" element={<VerifyOtpPage />} />
           <Route path="/pricing" element={<PricingPage />} />

@@ -63,6 +63,26 @@ export const authApi = {
     return res.data;
   },
 
+  forgotPassword: async (email: string) => {
+    const res = await apiClient.post<{ status: string; message: string }>(
+      "/user/forgetPassword",
+      { email },
+    );
+    return res.data;
+  },
+
+  setNewPassword: async (data: {
+    email: string;
+    otp: string;
+    newPassword: string;
+  }) => {
+    const res = await apiClient.post<{ status: string; message: string }>(
+      "/user/setNewPassword",
+      data,
+    );
+    return res.data;
+  },
+
   getMe: async () => {
     const res = await apiClient.get<{ status: string; user: User }>("/user/me");
     return res.data;

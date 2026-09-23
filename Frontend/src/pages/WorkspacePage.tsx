@@ -58,7 +58,8 @@ export function WorkspacePage() {
   }, []);
 
   useEffect(() => {
-    fetchChats();
+    const timer = window.setTimeout(() => void fetchChats(), 0);
+    return () => window.clearTimeout(timer);
   }, [fetchChats]);
 
   // When activeChatId changes, fetch chat details to get document title
@@ -192,6 +193,7 @@ export function WorkspacePage() {
 
       {/* Multimodal Upload & Extraction Modal */}
       <UploadModal
+        key={uploadModalTab}
         isOpen={isUploadModalOpen}
         initialTab={uploadModalTab}
         onClose={() => setIsUploadModalOpen(false)}

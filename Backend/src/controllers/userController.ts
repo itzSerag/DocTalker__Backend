@@ -84,7 +84,7 @@ export const sendTestMarketingEmail = catchAsync(async (req: Request, res: Respo
             },
         ],
         ctaText: ctaText || 'Claim 20% Off Pro',
-        ctaUrl: ctaUrl || `${process.env.BASE_URL || 'http://localhost:5173'}/pricing`,
+        ctaUrl: ctaUrl || `${process.env.FRONTEND_URL || 'http://localhost:5173'}/pricing`,
         discountCode: discountCode || 'DOCTALKER20',
         discountExpiry: 'Next 48 Hours',
     });
