@@ -112,18 +112,59 @@ export const App = (): Application => {
     app.use(passport.initialize());
     app.use(passport.session());
 
-    // Mount API Routes
-    app.use('/api/user', userRoutes);
-    app.use('/api/chat', chatRoutes);
-    app.use('/api/upload', uploadRoutes);
-    app.use('/api/query', queryRoutes);
-    app.use('/api/extractions', extractionRoutes);
-    app.use('/api/feedback', feedbackRoutes);
-    app.use('/api/handwritten', handwrittenRoutes);
-    app.use('/api/payment', paymentRoutes);
-    app.use('/api/test', testRoutes);
+    // Root and Health Endpoints
+    app.get('/', (_req: Request, res: Response) => {
+        res.status(200).json({
+            status: 'success',
+            message: 'DocTalker Backend Service is active',
+            api: '/api',
+            health: '/api/health',
+            version: '2.0.0',
+        });
+    });
 
-    // 404 Route Not Found Handler - for anything passes
+    app.get(['/health', '/api/health'], (_req: Request, res: Response) => {
+        res.status(200).json({
+            status: 'healthy',
+            service: 'DocTalker API',
+            uptime: Math.round(process.uptime()),
+            timestamp: new Date().toISOString(),
+        });
+    });
+
+    // Mount All API Routes strictly under /api
+    const apiRouter = express.Router();
+
+    apiRouter.get('/', (_req: Request, res: Response) => {
+        res.status(200).json({
+            status: 'success',
+            message: 'DocTalker API v2.0.0 root',
+            endpoints: [
+                '/api/user',
+                '/api/chat',
+                '/api/upload',
+                '/api/query',
+                '/api/extractions',
+                '/api/feedback',
+                '/api/handwritten',
+                '/api/payment',
+            ],
+        });
+    });
+
+    apiRouter.use('/user', userRoutes);
+    apiRouter.use('/chat', chatRoutes);
+    apiRouter.use('/upload', uploadRoutes);
+    apiRouter.use('/query', queryRoutes);
+    apiRouter.use('/extractions', extractionRoutes);
+    apiRouter.use('/feedback', feedbackRoutes);
+    apiRouter.use('/handwritten', handwrittenRoutes);
+    apiRouter.use('/payment', paymentRoutes);
+    apiRouter.use('/test', testRoutes);
+
+    app.use('/api', apiRouter);
+
+    // 404 Route Not Found Handler - for anything else
     app.all('*', (req: Request, _res: Response, next: NextFunction) => {
         next(new AppError(`Cannot find ${req.originalUrl} on this server`, 404));
     });
