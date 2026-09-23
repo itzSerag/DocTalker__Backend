@@ -13,11 +13,11 @@ export const auth = async (req: Request, _res: Response, next: NextFunction): Pr
     try {
         let token: string | undefined;
 
-        // Check HTTP-only cookie first, then Authorization header
-        if (req.cookies?.jwt) {
-            token = req.cookies.jwt;
-        } else if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+        // Prefer an explicit bearer token so a stale cookie cannot shadow a fresh login.
+        if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
             token = req.headers.authorization.split(' ')[1];
+        } else if (req.cookies?.jwt) {
+            token = req.cookies.jwt;
         }
 
         if (!token) {

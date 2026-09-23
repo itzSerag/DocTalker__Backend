@@ -12,8 +12,8 @@ services:
       - key: PORT
         value: 10000
       - key: BASE_URL
-        value: https://doctalker-backend.onrender.com
+        value: https://doctalker-backend-qwzh.onrender.com
       - key: CORS_ORIGIN
-        value: https://app.doctalker.ai
+        value: https://doctalkerfrontend.vercel.app,https://app.doctalker.ai
       - key: FRONTEND_URL
-        value: https://app.doctalker.ai
+        value: https://doctalkerfrontend.vercel.app

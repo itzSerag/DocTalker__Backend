@@ -44,6 +44,7 @@ export const LoginPage: React.FC = () => {
       };
       // Unverified user — redirect them to OTP verification
       if (resError.response?.data?.needsVerification) {
+        localStorage.removeItem("token");
         navigate("/verify-otp", {
           state: { email: resError.response.data.email || email },
         });
@@ -90,6 +91,7 @@ export const LoginPage: React.FC = () => {
           {/* Google OAuth */}
           <a
             href={`${API_BASE_URL}/user/auth/google`}
+            onClick={() => localStorage.removeItem("token")}
             className="flex items-center justify-center gap-3 w-full rounded-xl text-sm font-semibold transition-all group mb-6 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white shadow-sm"
           >
             <svg

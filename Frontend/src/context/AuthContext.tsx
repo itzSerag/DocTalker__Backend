@@ -1,5 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+} from "react";
 import { authApi, type User } from "../api/authApi";
 
 interface AuthContextType {
@@ -26,35 +32,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const sessionRequestId = useRef(0);
 
   const fetchCurrentUser = async (): Promise<void> => {
+    const requestId = ++sessionRequestId.current;
+    setLoading(true);
     try {
       const res = await authApi.getMe();
-      if (res.user) {
-        setUser(res.user);
-      } else {
+      if (requestId === sessionRequestId.current) {
+        setUser(res.user || null);
+      }
+    } catch (error) {
+      if (requestId === sessionRequestId.current) {
+        localStorage.removeItem("token");
         setUser(null);
       }
-    } catch {
-      localStorage.removeItem("token");
-      setUser(null);
+      throw error;
     } finally {
-      setLoading(false);
+      if (requestId === sessionRequestId.current) setLoading(false);
     }
   };
 
   useEffect(() => {
-    let isMounted = true;
+    const requestId = ++sessionRequestId.current;
+    let isCurrent = true;
     authApi
       .getMe()
       .then((res) => {
-        if (isMounted) {
+        if (isCurrent && requestId === sessionRequestId.current) {
           setUser(res.user || null);
           setLoading(false);
         }
       })
       .catch(() => {
-        if (isMounted) {
+        if (isCurrent && requestId === sessionRequestId.current) {
           localStorage.removeItem("token");
           setUser(null);
           setLoading(false);
@@ -62,12 +73,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
     return () => {
-      isMounted = false;
+      isCurrent = false;
     };
   }, []);
 
   const login = async (data: { email: string; password: string }) => {
     const res = await authApi.login(data);
+    sessionRequestId.current++;
     const token = res.token || res.data?.token;
     if (token) {
       localStorage.setItem("token", token);
@@ -90,6 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const verifyOtp = async (otp: string, email?: string) => {
     const res = await authApi.verifyOtp(otp, email);
+    sessionRequestId.current++;
     const token = res.token || res.data?.token;
     if (token) {
       localStorage.setItem("token", token);
@@ -102,6 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = async () => {
+    sessionRequestId.current++;
     try {
       await authApi.logout();
     } finally {
