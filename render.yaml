@@ -11,6 +11,8 @@ services:
         value: production
       - key: PORT
         value: 10000
+      - key: JWT_EXPIRE_TIME
+        value: 5d
       - key: BASE_URL
         value: https://doctalker-backend-qwzh.onrender.com
       - key: CORS_ORIGIN

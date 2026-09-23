@@ -103,7 +103,12 @@ const envSchema = Joi.object({
     JWT_SECRET_KEY: Joi.string().required().messages({
         'any.required': 'JWT_SECRET_KEY is required to sign and verify tokens.',
     }),
-    JWT_EXPIRE_TIME: Joi.string().default('30d'),
+    JWT_EXPIRE_TIME: Joi.string()
+        .pattern(/^\d+(ms|s|m|h|d|w|y)?$/i)
+        .default('30d')
+        .messages({
+            'string.pattern.base': 'JWT_EXPIRE_TIME must be a number with an optional unit (ms, s, m, h, d, w, y).',
+        }),
 
     // Brevo Email
     BREVO_API_KEY: Joi.string().required().messages({
