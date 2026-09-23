@@ -1,6 +1,14 @@
 import { BrevoClient } from '@getbrevo/brevo';
 import logger from './logger';
 import AppError from './appError';
+import {
+    getOTPEmailTemplate,
+    getWelcomeEmailTemplate,
+    getMarketingEmailTemplate,
+    getQuotaAlertEmailTemplate,
+    MarketingEmailParams,
+    QuotaAlertEmailParams,
+} from './emailTemplates';
 
 export interface SendEmailOptions {
     to: string;
@@ -24,18 +32,17 @@ const getBrevoClient = (): BrevoClient => {
     return brevoClient;
 };
 
-export const sendEmail = async (options: SendEmailOptions): Promise<void> => {
+export const sendEmail = async (options: SendEmailOptions): Promise<{ messageId?: string }> => {
     const client = getBrevoClient();
-    const senderEmail =
-        process.env.BREVO_SENDER_EMAIL ||
-        process.env.SMTP_USER ||
-        process.env.HOTMAIL_EMAIL ||
-        'no-reply@doctalker.com';
+    const senderEmail = process.env.BREVO_SENDER_EMAIL || 'doctalker@englishom.com';
     const senderName = process.env.BREVO_SENDER_NAME || 'DocTalker';
 
     try {
-        logger.info({ to: options.to, subject: options.subject }, 'Sending transactional email via Brevo API');
-        await client.transactionalEmails.sendTransacEmail({
+        logger.info(
+            { to: options.to, subject: options.subject, senderEmail },
+            'Sending transactional email via Brevo API'
+        );
+        const res = await client.transactionalEmails.sendTransacEmail({
             sender: {
                 email: senderEmail,
                 name: senderName,
@@ -45,7 +52,11 @@ export const sendEmail = async (options: SendEmailOptions): Promise<void> => {
             htmlContent: options.html,
             textContent: options.text || options.html.replace(/<[^>]*>?/gm, ''),
         });
-        logger.info({ to: options.to, subject: options.subject }, 'Email sent successfully via Brevo API');
+        logger.info(
+            { to: options.to, subject: options.subject, messageId: res.messageId },
+            'Email sent successfully via Brevo API'
+        );
+        return { messageId: res.messageId };
     } catch (error: any) {
         logger.error(
             {
@@ -60,20 +71,16 @@ export const sendEmail = async (options: SendEmailOptions): Promise<void> => {
     }
 };
 
-export const sendOTPEmail = async (toEmail: string, otp: string): Promise<void> => {
-    const subject = 'DocTalker Verification Code';
-    const text = `Your DocTalker verification code is: ${otp}. It will expire in 20 minutes.`;
-    const html = `
-    <div style="font-family: Arial, sans-serif; padding: 20px; color: #333; max-width: 500px; margin: 0 auto; border: 1px solid #eaeaea; border-radius: 8px;">
-      <h2 style="color: #111827; margin-bottom: 8px;">DocTalker Verification</h2>
-      <p style="color: #4b5563; font-size: 15px;">Your verification code is:</p>
-      <div style="background-color: #f3f4f6; border-radius: 6px; padding: 16px; text-align: center; margin: 16px 0;">
-        <span style="color: #4F46E5; font-size: 32px; font-weight: bold; letter-spacing: 6px;">${otp}</span>
-      </div>
-      <p style="color: #6b7280; font-size: 14px;">This code is valid for <strong>20 minutes</strong>. If you did not request this, please ignore this email.</p>
-    </div>
-  `;
-
+/**
+ * Send dedicated high-converting OTP verification email
+ */
+export const sendOTPEmail = async (
+    toEmail: string,
+    otp: string,
+    firstName?: string,
+    expiryMinutes: number = 20
+): Promise<void> => {
+    const { subject, html, text } = getOTPEmailTemplate({ otp, firstName, expiryMinutes });
     await sendEmail({
         to: toEmail,
         subject,
@@ -82,4 +89,50 @@ export const sendOTPEmail = async (toEmail: string, otp: string): Promise<void> 
     });
 };
 
-export default { sendEmail, sendOTPEmail };
+/**
+ * Send welcome onboarding email after account verification
+ */
+export const sendWelcomeEmail = async (toEmail: string, firstName: string): Promise<void> => {
+    const appUrl = `${process.env.BASE_URL || 'http://localhost:5173'}/app`;
+    const { subject, html, text } = getWelcomeEmailTemplate({ firstName, appUrl });
+    await sendEmail({
+        to: toEmail,
+        subject,
+        html,
+        text,
+    });
+};
+
+/**
+ * Send email marketing / promotional campaign email
+ */
+export const sendMarketingEmail = async (toEmail: string, params: MarketingEmailParams): Promise<void> => {
+    const { subject, html, text } = getMarketingEmailTemplate(params);
+    await sendEmail({
+        to: toEmail,
+        subject,
+        html,
+        text,
+    });
+};
+
+/**
+ * Send quota warning/limit reached email
+ */
+export const sendQuotaAlertEmail = async (toEmail: string, params: QuotaAlertEmailParams): Promise<void> => {
+    const { subject, html, text } = getQuotaAlertEmailTemplate(params);
+    await sendEmail({
+        to: toEmail,
+        subject,
+        html,
+        text,
+    });
+};
+
+export default {
+    sendEmail,
+    sendOTPEmail,
+    sendWelcomeEmail,
+    sendMarketingEmail,
+    sendQuotaAlertEmail,
+};

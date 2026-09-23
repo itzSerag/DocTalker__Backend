@@ -4,7 +4,7 @@ import passport from 'passport';
 import User from '../models/User';
 import OTP from '../models/OTP';
 import { generateToken } from '../utils/generateToken';
-import { sendOTPEmail } from '../utils/emailUtils';
+import { sendOTPEmail, sendWelcomeEmail } from '../utils/emailUtils';
 import { generateOTP } from '../utils/generateOTP';
 import { validateEmail } from '../utils/emailValidation';
 import catchAsync from '../utils/catchAsync';
@@ -51,7 +51,7 @@ export const signup = catchAsync(async (req: Request, res: Response, next: NextF
     // Generate and send OTP
     const otpCode = generateOTP();
     try {
-        await sendOTPEmail(email, otpCode);
+        await sendOTPEmail(email, otpCode, firstName);
     } catch (err: any) {
         logger.error({ err, email }, `Failed to send OTP email during signup: ${err.message}`);
         // User is created; they can use resend OTP
@@ -101,6 +101,18 @@ export const login = catchAsync(async (req: Request, res: Response, next: NextFu
         return next(new AppError('Incorrect email or password', 401));
     }
 
+    // Block unverified users – they must complete email verification first
+    if (!user.isVerified) {
+        const tempToken = generateToken({ _id: user._id });
+        setAuthCookie(res, tempToken);
+        return res.status(403).json({
+            status: 'fail',
+            needsVerification: true,
+            message: 'Please verify your email address before signing in.',
+            email: user.email,
+        });
+    }
+
     const token = generateToken({ _id: user._id });
     setAuthCookie(res, token);
 
@@ -128,7 +140,7 @@ export const resendOtp = catchAsync(async (req: Request, res: Response, next: Ne
     await OTP.deleteMany({ email });
 
     const otpCode = generateOTP();
-    await sendOTPEmail(email, otpCode);
+    await sendOTPEmail(email, otpCode, user.firstName);
 
     const otpDoc = new OTP({
         email,
@@ -156,8 +168,16 @@ export const verifyOtp = catchAsync(async (req: Request, res: Response, next: Ne
         return next(new AppError('OTP expired or not found. Please request a new one.', 404));
     }
 
+    // Increment attempt counter to prevent brute-force
+    otpDocument.attempts = (otpDocument.attempts || 0) + 1;
+    if (otpDocument.attempts > 5) {
+        await OTP.deleteMany({ email });
+        return next(new AppError('Too many incorrect attempts. Please request a new OTP.', 429));
+    }
+    await otpDocument.save();
+
     if (otpDocument.otp !== otp) {
-        return next(new AppError('Invalid OTP code', 400));
+        return next(new AppError(`Invalid OTP code. ${5 - otpDocument.attempts} attempts remaining.`, 400));
     }
 
     const user = await User.findOne({ email });
@@ -169,6 +189,11 @@ export const verifyOtp = catchAsync(async (req: Request, res: Response, next: Ne
     await user.save();
 
     await OTP.deleteMany({ email });
+
+    // Send welcome email in background
+    sendWelcomeEmail(user.email, user.firstName).catch((err) => {
+        logger.warn({ err, email: user.email }, 'Failed to send welcome email upon verification');
+    });
 
     const token = generateToken({ _id: user._id });
     setAuthCookie(res, token);
@@ -205,7 +230,7 @@ export const forgetPassword = catchAsync(async (req: Request, res: Response, nex
     }
 
     const otpCode = generateOTP();
-    await sendOTPEmail(email, otpCode);
+    await sendOTPEmail(email, otpCode, user.firstName);
 
     await OTP.deleteMany({ email });
     const otpDoc = new OTP({
@@ -293,11 +318,10 @@ export const googleAuthCallback = (req: Request, res: Response, next: NextFuncti
 
         const token = generateToken({ _id: user._id });
         setAuthCookie(res, token);
-        const redirectUrl = `/api/user/auth/google/success?token=${token}&email=${encodeURIComponent(
-            user.email
-        )}&firstName=${encodeURIComponent(user.firstName)}`;
 
-        return res.redirect(redirectUrl);
+        // Redirect to frontend app
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        return res.redirect(`${frontendUrl}/app`);
     })(req, res, next);
 };
 

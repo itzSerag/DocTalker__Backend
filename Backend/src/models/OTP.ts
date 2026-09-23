@@ -3,6 +3,7 @@ import mongoose, { Document, Schema } from 'mongoose';
 export interface IOTP {
     otp: string;
     email: string;
+    attempts?: number;
     createdAt?: Date;
 }
 
@@ -18,6 +19,10 @@ const otpSchema = new Schema<IOTPDocument>({
         required: true,
         lowercase: true,
         trim: true,
+    },
+    attempts: {
+        type: Number,
+        default: 0,
     },
     createdAt: {
         type: Date,

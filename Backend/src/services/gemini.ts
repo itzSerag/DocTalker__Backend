@@ -72,4 +72,20 @@ export const textAndImage = async (
     }
 };
 
-export default { textOnly, textAndImage };
+export const textStream = async (prompt: string): Promise<AsyncIterable<any>> => {
+    try {
+        const genAI = getGenAI();
+        const model = genAI.getGenerativeModel({
+            model: process.env.GEMINI_MODEL || DEFAULT_MODEL,
+            safetySettings,
+        });
+
+        const result = await model.generateContentStream(prompt);
+        return result.stream;
+    } catch (error: any) {
+        console.error('Gemini textStream error:', error.message);
+        throw new Error(`Gemini error: ${error.message}`);
+    }
+};
+
+export default { textOnly, textAndImage, textStream };

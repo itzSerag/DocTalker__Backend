@@ -1,5 +1,5 @@
-import { getCompletionFromOpenAI } from '../services/openAi';
-import { textOnly, textAndImage } from '../services/gemini';
+import { getCompletionFromOpenAI, getStreamFromOpenAI } from '../services/openAi';
+import { textOnly, textAndImage, textStream } from '../services/gemini';
 import AppError from './appError';
 
 export const getCompletion = async (prompt: any, modelType: string): Promise<string> => {
@@ -18,4 +18,15 @@ export const getCompletion = async (prompt: any, modelType: string): Promise<str
     }
 };
 
-export default { getCompletion };
+export const getStream = async (prompt: any, modelType: string): Promise<AsyncIterable<any>> => {
+    if (modelType === 'openai') {
+        return await getStreamFromOpenAI(prompt);
+    } else if (modelType === 'gemini-text') {
+        const textPrompt = typeof prompt === 'string' ? prompt : JSON.stringify(prompt);
+        return await textStream(textPrompt);
+    } else {
+        throw new AppError(`Streaming not supported for model type: ${modelType}`, 400);
+    }
+};
+
+export default { getCompletion, getStream };

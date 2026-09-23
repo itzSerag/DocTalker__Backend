@@ -36,4 +36,23 @@ export const getCompletionFromOpenAI = async (prompt: string | ChatMessage[]): P
     return completion.choices[0]?.message?.content || '';
 };
 
-export default { getCompletionFromOpenAI };
+export const getStreamFromOpenAI = async (prompt: string | ChatMessage[]): Promise<AsyncIterable<any>> => {
+    const openai = getOpenAIClient();
+
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] =
+        typeof prompt === 'string'
+            ? [{ role: 'user', content: prompt }]
+            : (prompt as OpenAI.Chat.Completions.ChatCompletionMessageParam[]);
+
+    const stream = await openai.chat.completions.create({
+        model: OPEN_AI_COMPLETION_MODEL,
+        max_tokens: 1000,
+        messages,
+        temperature: 0.2,
+        stream: true,
+    });
+
+    return stream;
+};
+
+export default { getCompletionFromOpenAI, getStreamFromOpenAI };

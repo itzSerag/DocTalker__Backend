@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import rateLimit from 'express-rate-limit';
 import {
     signup,
     login,
@@ -13,16 +14,38 @@ import {
     googleAuthSuccess,
     googleAuthFailure,
 } from '../controllers/authController';
-import { me, updateUser, deleteUser } from '../controllers/userController';
+import { me, updateUser, deleteUser, sendTestMarketingEmail } from '../controllers/userController';
 import { auth } from '../middlewares/auth';
 
 const router = Router();
 
+const authLimiter = rateLimit({
+    max: 10, // 10 requests
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    message: {
+        status: 'fail',
+        message: 'Too many authentication attempts from this IP, please try again in 15 minutes.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+const otpResendLimiter = rateLimit({
+    max: 3, // 3 resend requests
+    windowMs: 15 * 60 * 1000, // per 15 minutes
+    message: {
+        status: 'fail',
+        message: 'Too many OTP resend requests. Please wait 15 minutes before trying again.',
+    },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
 // Public auth routes
-router.post('/signup', signup);
-router.post('/login', login);
-router.post('/forgetPassword', forgetPassword);
-router.post('/setNewPassword', setNewPassword);
+router.post('/signup', authLimiter, signup);
+router.post('/login', authLimiter, login);
+router.post('/forgetPassword', authLimiter, forgetPassword);
+router.post('/setNewPassword', authLimiter, setNewPassword);
 router.get('/logout', logOut);
 
 // Google OAuth
@@ -42,7 +65,8 @@ router.get('/verifyToken', (_req, res) => {
 });
 
 router.post('/otp/verify', verifyOtp);
-router.post('/otp/resend', resendOtp);
+router.post('/otp/resend', otpResendLimiter, resendOtp);
 router.post('/resetPassword', resetPassword);
+router.post('/marketing-email', sendTestMarketingEmail);
 
 export default router;

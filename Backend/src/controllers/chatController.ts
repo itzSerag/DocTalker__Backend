@@ -2,8 +2,54 @@ import { Request, Response, NextFunction } from 'express';
 import mongoose from 'mongoose';
 import User from '../models/User';
 import Chat from '../models/Chat';
+import Document from '../models/Document';
 import catchAsync from '../utils/catchAsync';
 import AppError from '../utils/appError';
+
+// Create a new chat (optionally linked to a document)
+export const createChat = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    if (!req.user) {
+        return next(new AppError('User not authenticated', 401));
+    }
+
+    const { documentId, chatName } = req.body;
+
+    // If documentId provided, validate it exists and belongs to user
+    if (documentId) {
+        const doc = await Document.findById(documentId);
+        if (!doc) {
+            return next(new AppError('Document not found', 404));
+        }
+    } else {
+        // If no documentId provided, we need a placeholder or we create without linking
+        return next(new AppError('A documentId is required to create a chat. Please upload a document first.', 400));
+    }
+
+    const chat = new Chat({
+        chatName: chatName?.trim() || 'New Conversation',
+        documentId,
+        messages: [],
+    });
+
+    await chat.save();
+
+    await User.findByIdAndUpdate(req.user._id, {
+        $push: { chats: chat._id },
+    });
+
+    return res.status(201).json({
+        status: 'success',
+        data: {
+            chat: {
+                id: chat._id,
+                chatName: chat.chatName,
+                documentId: chat.documentId,
+                messages: [],
+                createdAt: chat.createdAt,
+            },
+        },
+    });
+});
 
 // Get all chats for the authenticated user
 export const getAllChats = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
@@ -212,6 +258,7 @@ export const getStarredMessages = catchAsync(async (req: Request, res: Response,
 });
 
 export default {
+    createChat,
     getAllChats,
     getChat,
     deleteChat,

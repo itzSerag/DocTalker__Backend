@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import {
+    createChat,
     getAllChats,
     getChat,
     deleteChat,
@@ -23,6 +24,7 @@ router.post('/unStar', unStarMessage);
 
 // Chats collection
 router.get('/', getAllChats);
+router.post('/', createChat);
 
 // Specific chat operations
 router.get('/:id', getChat);

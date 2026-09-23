@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { getCompletion } from '../utils/getCompletion';
+import { getCompletion, getStream } from '../utils/getCompletion';
 import { getEmbeddings } from '../services/huggingface';
 import DocumentModel from '../models/Document';
 import { cosineSimilarity } from '../utils/cosineSimilarity';
@@ -102,7 +102,8 @@ Question: ${query}`;
     let responseText: string;
 
     if (modelType === 'openai') {
-        const chatHistory = chat.messages.map((m) => ({
+        const recentMessages = chat.messages.slice(-5);
+        const chatHistory = recentMessages.map((m) => ({
             role: m.role as 'system' | 'user' | 'assistant',
             content: m.content,
         }));
@@ -135,4 +136,101 @@ Question: ${query}`;
     });
 });
 
-export default { handler };
+export const streamHandler = catchAsync(async (req: Request, res: Response, next: NextFunction) => {
+    const { query, chatId, modelType = 'openai' } = req.body;
+    const currUser = req.user;
+
+    if (!currUser) {
+        return next(new AppError('User not authenticated', 401));
+    }
+    if (!query || !chatId) {
+        return next(new AppError('Both "query" and "chatId" are required', 400));
+    }
+    if (modelType !== 'openai' && modelType !== 'gemini-text') {
+        return next(new AppError('Invalid modelType. Supported: "openai", "gemini-text"', 400));
+    }
+
+    const chat = await Chat.findById(chatId);
+    if (!chat) {
+        return next(new AppError('Chat not found', 404));
+    }
+    const document = await DocumentModel.findById(chat.documentId);
+    if (!document) {
+        return next(new AppError('Associated document not found', 404));
+    }
+
+    chat.messages.push({ role: 'user', content: query, model: modelType } as any);
+    await chat.save();
+
+    const queryEmbeddings = (await getEmbeddings(query)) as number[];
+    const similarityResults = [];
+    for (const file of document.Files) {
+        for (const chunk of file.Chunks) {
+            if (chunk.embeddings && chunk.embeddings.length > 0) {
+                similarityResults.push({ chunk, similarity: cosineSimilarity(queryEmbeddings, chunk.embeddings) });
+            }
+        }
+    }
+    similarityResults.sort((a, b) => b.similarity - a.similarity);
+
+    const topSimilarityChunks = similarityResults.slice(0, 5).map((result) => ({
+        rawText: result.chunk.rawText,
+        pageNumber: result.chunk.pageNumber,
+        fileName: result.chunk.fileName,
+    }));
+
+    // Setup headers for SSE (Vercel compatible)
+    res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+    });
+
+    // Send the citations metadata first as a JSON event
+    res.write(`event: metadata\ndata: ${JSON.stringify({ topChunks: topSimilarityChunks })}\n\n`);
+
+    if (similarityResults.length === 0 || similarityResults[0].similarity < 0.3) {
+        const fallbackResponse = 'Sorry, I could not find relevant information in the uploaded document.';
+        res.write(`data: ${JSON.stringify({ chunk: fallbackResponse })}\n\n`);
+        chat.messages.push({ role: 'assistant', content: fallbackResponse, model: modelType } as any);
+        await chat.save();
+        await User.findByIdAndUpdate(currUser._id, { $inc: { queryRequest: 1 } });
+        res.write(`event: end\ndata: [DONE]\n\n`);
+        return res.end();
+    }
+
+    const contextText = topSimilarityChunks.map((c) => c.rawText).join('\n---\n');
+    const systemPrompt = `You are DocTalker Bot that answers questions based ONLY on the provided context. If the answer cannot be found in the context, politely state that you cannot find it in the document.\n\nContext:\n${contextText}\n\nQuestion: ${query}`;
+
+    let stream;
+    if (modelType === 'openai') {
+        const chatHistory = chat.messages.slice(-5).map((m) => ({ role: m.role, content: m.content }));
+        chatHistory.push({ role: 'user', content: systemPrompt } as any);
+        stream = await getStream(chatHistory, 'openai');
+    } else {
+        stream = await getStream(systemPrompt, 'gemini-text');
+    }
+
+    let fullResponse = '';
+    for await (const chunk of stream) {
+        let chunkText = '';
+        if (modelType === 'openai') {
+            chunkText = chunk.choices[0]?.delta?.content || '';
+        } else {
+            chunkText = chunk.text();
+        }
+        if (chunkText) {
+            fullResponse += chunkText;
+            res.write(`data: ${JSON.stringify({ chunk: chunkText })}\n\n`);
+        }
+    }
+
+    chat.messages.push({ role: 'assistant', content: fullResponse, model: modelType } as any);
+    await chat.save();
+    await User.findByIdAndUpdate(currUser._id, { $inc: { queryRequest: 1 } });
+
+    res.write(`event: end\ndata: [DONE]\n\n`);
+    res.end();
+});
+
+export default { handler, streamHandler };
