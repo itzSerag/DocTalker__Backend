@@ -10,7 +10,7 @@ export const getAuthCookieOptions = (): CookieOptions => {
     return {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'strict',
+        sameSite: isProduction ? 'none' : 'lax',
         maxAge,
         path: '/',
     };
@@ -25,7 +25,7 @@ export const clearAuthCookie = (res: Response): void => {
     res.clearCookie(COOKIE_NAME, {
         httpOnly: true,
         secure: isProduction,
-        sameSite: 'strict',
+        sameSite: isProduction ? 'none' : 'lax',
         path: '/',
     });
 };

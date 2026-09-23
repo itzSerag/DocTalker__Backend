@@ -1,7 +1,18 @@
 import axios from "axios";
 
+// Normalize VITE_API from environment
+const rawApiUrl = (import.meta.env.VITE_API || "").trim();
+
+export const getApiBaseUrl = (): string => {
+  if (!rawApiUrl) return "/api";
+  const sanitized = rawApiUrl.replace(/\/+$/, "");
+  return sanitized.endsWith("/api") ? sanitized : `${sanitized}/api`;
+};
+
+export const API_BASE_URL = getApiBaseUrl();
+
 export const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: API_BASE_URL,
   withCredentials: true, // Enables HTTP-only strict cookies to be sent with every request
   headers: {
     "Content-Type": "application/json",

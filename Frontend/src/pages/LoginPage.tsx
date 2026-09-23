@@ -3,6 +3,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Lock, Mail, ArrowRight, Loader2 } from "lucide-react";
 import HeroScene from "../components/3d/HeroScene";
+import { API_BASE_URL } from "../api/client";
 
 export const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -86,7 +87,7 @@ export const LoginPage: React.FC = () => {
 
           {/* Google OAuth */}
           <a
-            href="/api/user/auth/google"
+            href={`${API_BASE_URL}/user/auth/google`}
             className="flex items-center justify-center gap-3 w-full rounded-xl text-sm font-semibold transition-all group mb-6 px-4 py-3 bg-slate-800/50 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white shadow-sm"
           >
             <svg

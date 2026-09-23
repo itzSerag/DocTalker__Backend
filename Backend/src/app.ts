@@ -58,10 +58,18 @@ export const App = (): Application => {
     // Security Headers
     app.use(helmet());
 
-    // CORS
+    // CORS (dynamically echo origin when credentials: true is active)
+    const corsOrigins = process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()) : ['*'];
+
     app.use(
         cors({
-            origin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : '*',
+            origin: (origin, callback) => {
+                if (!origin) return callback(null, true);
+                if (corsOrigins.includes('*') || corsOrigins.includes(origin)) {
+                    return callback(null, origin);
+                }
+                return callback(null, origin);
+            },
             methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
             credentials: true,
         })
