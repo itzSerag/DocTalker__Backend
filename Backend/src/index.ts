@@ -17,8 +17,8 @@ const startServer = async (): Promise<void> => {
 
         const app = App();
 
-        const server = app.listen(PORT, () => {
-            logger.info(`DocTalker Server running on http://localhost:${PORT}`);
+        const server = app.listen(PORT, '0.0.0.0', () => {
+            logger.info(`DocTalker Server running on http://0.0.0.0:${PORT}`);
             logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
         });
 
